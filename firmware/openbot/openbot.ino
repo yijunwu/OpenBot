@@ -54,7 +54,7 @@
 //------------------------------------------------------//
 
 // Setup the OpenBot version (DIY, PCB_V1, PCB_V2, RTR_TT, RC_CAR, LITE, RTR_TT2, RTR_520, DIY_ESP32)
-#define OPENBOT DIY
+#define OPENBOT DIY_ESP32
 
 //------------------------------------------------------//
 // SETTINGS - Global settings
@@ -488,16 +488,16 @@ const String robot_type = "DIY_ESP32";
 #define PIN_PWM_L2 CH_PWM_L2
 #define PIN_PWM_R1 CH_PWM_R1
 #define PIN_PWM_R2 CH_PWM_R2
-#define HAS_VOLTAGE_DIVIDER 1
+#define HAS_VOLTAGE_DIVIDER 0
 const float VOLTAGE_DIVIDER_FACTOR = (30 + 10) / 10;
 const float VOLTAGE_MIN = 6.0f;
 const float VOLTAGE_LOW = 9.0f;
 const float VOLTAGE_MAX = 12.6f;
 const float ADC_FACTOR = 3.3 / 4095;
-#define HAS_INDICATORS 1
+#define HAS_INDICATORS 0
 #define HAS_SONAR 1
 #define SONAR_MEDIAN 0
-#define HAS_SPEED_SENSORS_FRONT 1
+#define HAS_SPEED_SENSORS_FRONT 0
 //PWM properties
 const int FREQ = 5000;
 const int RES = 8;
