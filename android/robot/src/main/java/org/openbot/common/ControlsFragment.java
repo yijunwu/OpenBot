@@ -248,6 +248,7 @@ public abstract class ControlsFragment extends Fragment implements ServerListene
             case Constants.CMD_DRIVE:
               JSONObject driveValue = event.getJSONObject("driveCmd");
 
+              // TODO: this is the code to control vehicle via phone controller, see whether we need to change it to support COMPOUND control mode
               vehicle.setControl(
                   new Control(
                       Float.parseFloat(driveValue.getString("l")),

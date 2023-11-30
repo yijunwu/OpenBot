@@ -49,7 +49,9 @@ public class Enums {
   public enum ControlMode {
     GAMEPAD(0),
     PHONE(1),
-    WEBRTC(2);
+    WEBRTC(2),
+    //GAMEPAD + PHONE
+    COMPOUND(3);
 
     private final int value;
 
@@ -76,6 +78,9 @@ public class Enums {
       case GAMEPAD:
         return ControlMode.PHONE;
       case PHONE:
+        //TODO: change it to COMPOUND if we support COMPOUND control mode
+        return ControlMode.COMPOUND;
+      case COMPOUND:
         return ControlMode.GAMEPAD;
     }
     return null;

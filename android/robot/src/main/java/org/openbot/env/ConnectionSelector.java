@@ -4,11 +4,16 @@ import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 
+import org.jetbrains.annotations.NotNull;
+
+import java.util.ArrayList;
+import java.util.List;
+
 public class ConnectionSelector {
   private static final String TAG = "ConnectionManager";
   private static ConnectionSelector _connectionSelector;
   private static Context _context;
-  private ILocalConnection connection;
+  private List<ILocalConnection> connections;
 
   private final ILocalConnection networkConnection = new NetworkServiceConnection();
   private final ILocalConnection nearbyConnection = new NearbyConnection();
@@ -32,18 +37,20 @@ public class ConnectionSelector {
     return _connectionSelector;
   }
 
-  ILocalConnection getConnection() {
-    if (connection != null) {
-      return connection;
+  @NotNull
+  List<ILocalConnection> getConnections() {
+    if (connections != null) {
+      return connections;
     }
 
+    connections = new ArrayList<>();
     if (isConnectedViaWifi()) {
-      connection = networkConnection;
+      connections.add(networkConnection);
     } else {
-      connection = nearbyConnection;
+      connections.add(nearbyConnection);
     }
 
-    return connection;
+    return connections;
   }
 
   private boolean isConnectedViaWifi() {

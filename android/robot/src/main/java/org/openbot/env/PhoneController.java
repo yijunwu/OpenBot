@@ -11,6 +11,9 @@ import org.openbot.R;
 import org.openbot.customview.AutoFitSurfaceGlView;
 import org.openbot.customview.WebRTCSurfaceView;
 import org.openbot.utils.CameraUtils;
+
+import java.util.List;
+
 import timber.log.Timber;
 
 @SuppressWarnings("ResultOfMethodCallIgnored")
@@ -53,7 +56,7 @@ public class PhoneController {
     videoServer.setCanStart(true);
 
     this.connectionSelector = ConnectionSelector.getInstance(context);
-    connectionSelector.getConnection().setDataCallback(new DataReceived());
+    connectionSelector.getConnections().forEach(c -> c.setDataCallback(new DataReceived()));
 
     android.util.Size resolution =
         CameraUtils.getClosestCameraResolution(context, new android.util.Size(640, 360));
@@ -94,26 +97,28 @@ public class PhoneController {
   }
 
   public void connect(Context context) {
-    ILocalConnection connection = connectionSelector.getConnection();
+    List<ILocalConnection> connections = connectionSelector.getConnections();
 
-    if (!connection.isConnected()) {
-      connection.init(context);
-      connection.connect(context);
-    } else {
-      connection.start();
-    }
+    connections.forEach(c -> {
+      if (!c.isConnected()) {
+        c.init(context);
+        c.connect(context);
+      } else {
+        c.start();
+      }
+    });
   }
 
   public void disconnect() {
-    connectionSelector.getConnection().stop();
+    connectionSelector.getConnections().forEach(c -> c.stop());
   }
 
   public void send(JSONObject info) {
-    connectionSelector.getConnection().sendMessage(info.toString());
+    connectionSelector.getConnections().forEach(c -> c.sendMessage(info.toString()));
   }
 
   public boolean isConnected() {
-    return connectionSelector.getConnection().isConnected();
+    return connectionSelector.getConnections().stream().anyMatch(c -> c.isConnected());
   }
 
   private void handleBotEvents() {

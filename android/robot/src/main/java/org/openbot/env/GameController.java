@@ -123,6 +123,8 @@ public class GameController {
     return new Control(left, right);
   }
 
+  //TODO: this is the code to process gamepad controller event,
+  // consider whether we need to change it to support COMPOUND control mode
   public Control processJoystickInput(MotionEvent event, int historyPos) {
 
     switch (driveMode) {
