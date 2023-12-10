@@ -16,8 +16,6 @@ public class Constants {
   public static final String PERMISSION_LOCATION = Manifest.permission.ACCESS_FINE_LOCATION;
   public static final String PERMISSION_COARSE_LOCATION =
       Manifest.permission.ACCESS_COARSE_LOCATION;
-  public static final String PERMISSION_BACKGROUND_LOCATION =
-          Manifest.permission.ACCESS_BACKGROUND_LOCATION;
   public static final String PERMISSION_STORAGE = Manifest.permission.WRITE_EXTERNAL_STORAGE;
   public static final String PERMISSION_BLUETOOTH = Manifest.permission.BLUETOOTH;
   public static final String PERMISSION_AUDIO = Manifest.permission.RECORD_AUDIO;
@@ -25,7 +23,7 @@ public class Constants {
   public static final String[] PERMISSIONS_LOGGING =
       new String[] {PERMISSION_CAMERA, PERMISSION_STORAGE, PERMISSION_LOCATION};
   public static final String[] PERMISSIONS_CONTROLLER =
-      new String[] {PERMISSION_CAMERA, PERMISSION_AUDIO, PERMISSION_LOCATION, PERMISSION_COARSE_LOCATION, PERMISSION_BACKGROUND_LOCATION};
+      new String[] {PERMISSION_CAMERA, PERMISSION_AUDIO, PERMISSION_LOCATION};
 
   public static final String GENERIC_MOTION_EVENT = "dispatchGenericMotionEvent";
   public static final String KEY_EVENT = "dispatchKeyEvent";
