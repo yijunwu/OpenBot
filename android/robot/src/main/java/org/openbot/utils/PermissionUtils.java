@@ -79,7 +79,7 @@ public class PermissionUtils {
 
   public static boolean hasControllerPermissions(Activity activity) {
     return hasPermissions(
-        activity, new String[] {PERMISSION_CAMERA, PERMISSION_AUDIO, PERMISSION_LOCATION});
+        activity, Constants.PERMISSIONS_CONTROLLER);
   }
 
   public static void requestCameraPermission(Activity activity) {
