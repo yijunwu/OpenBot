@@ -28,6 +28,6 @@ object ConnectionSelector {
         val info = wifiManager!!.connectionInfo ?: return false
         val networkId = info.networkId
 
-        return networkId > 0
+        return networkId >= 0
     }
 }
