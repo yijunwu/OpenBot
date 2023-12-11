@@ -64,6 +64,7 @@ public class FreeRoamFragment extends ControlsFragment {
     binding.controllerContainer.controlMode.setOnClickListener(
         v -> {
           ControlMode controlMode = ControlMode.getByID(preferencesManager.getControlMode());
+          //TODO: need to change if we support compound control mode
           if (controlMode != null) setControlMode(Enums.switchControlMode(controlMode));
         });
     binding.controllerContainer.driveMode.setOnClickListener(
@@ -216,6 +217,13 @@ public class FreeRoamFragment extends ControlsFragment {
             requestPermissionLauncher.launch(Constants.PERMISSIONS_CONTROLLER);
           else connectPhoneController();
           break;
+        case COMPOUND:
+          disconnectPhoneController();
+          binding.controllerContainer.controlMode.setImageResource(R.drawable.ic_controller_n_phone);
+          if (!PermissionUtils.hasControllerPermissions(requireActivity()))
+            requestPermissionLauncher.launch(Constants.PERMISSIONS_CONTROLLER);
+          else connectPhoneControllerForCompound();
+          break;
       }
       Timber.d("Updating  controlMode: %s", controlMode);
       preferencesManager.setControlMode(controlMode.getValue());
@@ -252,6 +260,13 @@ public class FreeRoamFragment extends ControlsFragment {
     preferencesManager.setDriveMode(oldDriveMode.getValue());
   }
 
+  private void connectPhoneControllerForCompound() {
+    phoneController.connect(requireContext());
+    //TODO: Currently no need to set driveMode to dual,
+    // will need to add another variable to save phone drive mode if we support multiple drive
+    // mode for phone controller since we now support COMPOUND control mode
+  }
+
   private void disconnectPhoneController() {
     phoneController.disconnect();
     setDriveMode(DriveMode.getByID(preferencesManager.getDriveMode()));
@@ -284,7 +299,8 @@ public class FreeRoamFragment extends ControlsFragment {
 
       case Constants.CMD_DISCONNECTED:
         handleDriveCommand();
-        setControlMode(ControlMode.GAMEPAD);
+        disconnectPhoneController();
+        //setControlMode(ControlMode.getByID(preferencesManager.getControlMode()));
         break;
 
       case Constants.CMD_SPEED_DOWN:

@@ -12,7 +12,7 @@ public class SharedPreferencesManager {
   private static final String BAUD_RATE = "BAUD_RATE";
   private static final int DEFAULT_LOG_MODE = Enums.LogMode.CROP_IMG.ordinal();
   private static final String LOG_MODE = "LOG_MODE";
-  private static final int DEFAULT_CONTROL_MODE = Enums.ControlMode.GAMEPAD.getValue();
+  private static final int DEFAULT_CONTROL_MODE = Enums.ControlMode.COMPOUND.getValue();
   private static final String CONTROL_MODE = "CONTROL_MODE";
   private static final int DEFAULT_SPEED_MODE = Enums.SpeedMode.NORMAL.getValue();
   private static final String SPEED_MODE = "SPEED_MODE";
