@@ -299,7 +299,8 @@ public class FreeRoamFragment extends ControlsFragment {
 
       case Constants.CMD_DISCONNECTED:
         handleDriveCommand();
-        setControlMode(ControlMode.getByID(preferencesManager.getControlMode()));
+        disconnectPhoneController();
+        //setControlMode(ControlMode.getByID(preferencesManager.getControlMode()));
         break;
 
       case Constants.CMD_SPEED_DOWN:
