@@ -75,13 +75,8 @@ class ControllerActivity : /*AppCompat*/
     }
 
     private fun sendJoystickInput(event: MotionEvent) {
-        val leftTrigger = event.downTime / 1000F
-        val rightTrigger = 0.0F
-        val steeringOffset = 0.0F
-        val msg = "{gamepadEvent: {leftTrigger:${leftTrigger}, rightTrigger:${rightTrigger}, steeringOffset:${steeringOffset}}}"
-        ConnectionSelector.getConnection().sendMessage(msg)
-        //val (left, right) = GameController.convertGameToControl(leftTrigger, rightTrigger, steeringOffset)
-        //DriveCommandReducer.filter(right, left)
+        val (left, right) = GameController.processJoystickInput(DriveMode.GAME, event, -1)
+        DriveCommandReducer.filter(right, left)
     }
 
     @SuppressLint("CheckResult")
@@ -254,6 +249,112 @@ class ControllerActivity : /*AppCompat*/
                     Log.i(TAG, "Permission has been granted by user")
                 }
             }
+        }
+    }
+
+    enum class DriveMode(val value: Int) {
+        DUAL(0), GAME(1), JOYSTICK(2);
+    }
+
+    data class Control(val left: Float, val right: Float)
+
+    object GameController {
+        private fun getCenteredAxis(event: MotionEvent?, axis: Int, historyPos: Int): Float {
+            if (event == null || event.device == null) return 0F
+            val range = event.device.getMotionRange(axis, event.source)
+
+            // A joystick at rest does not always report an absolute position of
+            // (0,0). Use the getFlat() method to determine the range of values
+            // bounding the joystick axis center.
+            if (range != null) {
+                val flat = range.flat
+                val value = if (historyPos < 0) event.getAxisValue(axis) else event.getHistoricalAxisValue(axis, historyPos)
+
+                // Ignore axis values that are within the 'flat' region of the
+                // joystick axis center.
+                if (Math.abs(value) > flat) {
+                    return value
+                }
+            }
+            return 0F
+        }
+        fun processJoystickInput(driveMode: DriveMode, event: MotionEvent?, historyPos: Int): Control {
+            return when (driveMode) {
+                DriveMode.DUAL -> {
+                    val leftStick: Float = getCenteredAxis(event, MotionEvent.AXIS_Y, historyPos)
+                    val rightStick: Float = getCenteredAxis(event, MotionEvent.AXIS_RZ, historyPos)
+                    convertDualToControl(leftStick, rightStick)
+                }
+
+                DriveMode.GAME -> {
+                    var rightTrigger: Float = getCenteredAxis(event, MotionEvent.AXIS_GAS, historyPos)
+                    if (rightTrigger == 0f) {
+                        rightTrigger = getCenteredAxis(event, MotionEvent.AXIS_RTRIGGER, historyPos)
+                    }
+                    var leftTrigger: Float = getCenteredAxis(event, MotionEvent.AXIS_BRAKE, historyPos)
+                    if (leftTrigger == 0f) {
+                        leftTrigger = getCenteredAxis(event, MotionEvent.AXIS_LTRIGGER, historyPos)
+                    }
+
+                    // Calculate the steering magnitude by
+                    // using the input value from one of these physical controls:
+                    // the left control stick, hat axis, or the right control stick.
+                    var steeringOffset: Float = getCenteredAxis(event, MotionEvent.AXIS_X, historyPos)
+                    if (steeringOffset == 0f) {
+                        steeringOffset = getCenteredAxis(event, MotionEvent.AXIS_HAT_X, historyPos)
+                    }
+                    if (steeringOffset == 0f) {
+                        steeringOffset = getCenteredAxis(event, MotionEvent.AXIS_Z, historyPos)
+                    }
+                    convertGameToControl(leftTrigger, rightTrigger, steeringOffset)
+                }
+
+                DriveMode.JOYSTICK -> {
+                    // Calculate the vertical distance to move by
+                    // using the input value from one of these physical controls:
+                    // the left control stick, hat switch, or the right control stick.
+                    var yAxis: Float = getCenteredAxis(event, MotionEvent.AXIS_Y, historyPos)
+                    if (yAxis == 0f) {
+                        yAxis = getCenteredAxis(event, MotionEvent.AXIS_HAT_Y, historyPos)
+                    }
+                    if (yAxis == 0f) {
+                        yAxis = getCenteredAxis(event, MotionEvent.AXIS_RZ, historyPos)
+                    }
+
+                    // Calculate the horizontal distance to move by
+                    // using the input value from one of these physical controls:
+                    // the left control stick, hat axis, or the right control stick.
+                    var xAxis: Float = getCenteredAxis(event, MotionEvent.AXIS_X, historyPos)
+                    if (xAxis == 0f) {
+                        xAxis = getCenteredAxis(event, MotionEvent.AXIS_HAT_X, historyPos)
+                    }
+                    if (xAxis == 0f) {
+                        xAxis = getCenteredAxis(event, MotionEvent.AXIS_Z, historyPos)
+                    }
+                    convertJoystickToControl(xAxis, yAxis)
+                }
+                else -> Control(0F, 0F)
+            }
+        }
+
+        private fun convertDualToControl(leftStick: Float, rightStick: Float): Control {
+            return Control(-leftStick, -rightStick)
+        }
+
+        private fun convertGameToControl(leftTrigger: Float, rightTrigger: Float, steeringOffset: Float): Control {
+            var left = rightTrigger - leftTrigger
+            var right = rightTrigger - leftTrigger
+            if (left >= 0) left += steeringOffset else left -= steeringOffset
+            if (right >= 0) right -= steeringOffset else right += steeringOffset
+            return Control(left, right)
+        }
+
+        private fun convertJoystickToControl(xAxis: Float, yAxis: Float): Control {
+            var left = -yAxis
+            var right = -yAxis
+            if (left >= 0) left += xAxis else left -= xAxis
+            if (right >= 0) right -= xAxis else right += xAxis
+            return Control(left, right)
         }
     }
 
