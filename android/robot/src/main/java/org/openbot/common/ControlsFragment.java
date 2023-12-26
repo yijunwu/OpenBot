@@ -246,15 +246,9 @@ public abstract class ControlsFragment extends Fragment implements ServerListene
             commandType = event.getString("command");
           } else if (event.has("driveCmd")) {
             commandType = Constants.CMD_DRIVE;
-          } else if (event.has("gamepadEvent")) {
-            commandType = Constants.CMD_GAMEPAD_EVENT;
           }
 
           switch (commandType) {
-            case Constants.CMD_GAMEPAD_EVENT:
-              JSONObject gamepadEvent = event.getJSONObject("gamepadEvent");
-              vehicle.setControl(vehicle.getGameController().processJoystickInputFromPhone(gamepadEvent, -1));
-              break;
             case Constants.CMD_DRIVE:
               JSONObject driveValue = event.getJSONObject("driveCmd");
 
@@ -298,7 +292,7 @@ public abstract class ControlsFragment extends Fragment implements ServerListene
         error -> {
           Log.d(null, "Error occurred in ControllerToBotEventBus: " + error);
         },
-        event -> event.has("command") || event.has("driveCmd")  || event.has("gamepadEvent") // filter out everything else
+        event -> event.has("command") || event.has("driveCmd") // filter out everything else
         );
   }
 
