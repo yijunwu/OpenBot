@@ -186,8 +186,7 @@ public abstract class ControlsFragment extends Fragment implements ServerListene
   }
 
   protected void processKeyEvent(KeyEvent keyCode) {
-    if (Enums.ControlMode.getByID(preferencesManager.getControlMode())
-        == Enums.ControlMode.GAMEPAD) {
+    if (isGamepadControlEnabled()) {
       switch (keyCode.getKeyCode()) {
         case KeyEvent.KEYCODE_BUTTON_X: // square
           toggleIndicatorEvent(Enums.VehicleIndicator.LEFT.getValue());
@@ -231,6 +230,11 @@ public abstract class ControlsFragment extends Fragment implements ServerListene
           break;
       }
     }
+  }
+
+  private boolean isGamepadControlEnabled() {
+    Enums.ControlMode controlMode = Enums.ControlMode.getByID(preferencesManager.getControlMode());
+    return controlMode == Enums.ControlMode.GAMEPAD || controlMode == Enums.ControlMode.COMPOUND;
   }
 
   private void handlePhoneControllerEvents() {
