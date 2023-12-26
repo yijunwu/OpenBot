@@ -35,7 +35,7 @@ class ControllerActivity : /*AppCompat*/
     private val TAG = "ControllerActivity"
     private lateinit var binding: ActivityFullscreenBinding
     private lateinit var screenSelector: ScreenSelector
-    private lateinit var driveMode: DriveMode
+    private var driveMode: DriveMode? = null
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -72,7 +72,7 @@ class ControllerActivity : /*AppCompat*/
     }
 
     private fun sendJoystickInput(event: MotionEvent) {
-        val (left, right) = GameController.processJoystickInput(driveMode, event, -1)
+        val (left, right) = GameController.processJoystickInput(driveMode ?: return, event, -1)
         DriveCommandReducer.filter(right, left)
     }
 

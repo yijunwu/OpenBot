@@ -16,7 +16,7 @@ import org.openbot.controller.DriveMode
 import org.openbot.controller.R
 import org.openbot.controller.utils.LocalEventBus
 
-class DriveModeIcon @JvmOverloads constructor(
+class SwitchDriveMode @JvmOverloads constructor(
         context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
 ) : Button(context, attrs, defStyleAttr) {
 
