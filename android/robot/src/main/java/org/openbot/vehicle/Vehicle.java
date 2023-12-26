@@ -9,10 +9,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
+
+import org.openbot.env.BotToControllerEventBus;
 import org.openbot.env.GameController;
 import org.openbot.env.SensorReading;
 import org.openbot.main.CommonRecyclerViewAdapter;
 import org.openbot.main.ScanDeviceAdapter;
+import org.openbot.utils.ConnectionUtils;
 import org.openbot.utils.Enums;
 
 public class Vehicle {
@@ -303,6 +306,7 @@ public class Vehicle {
   public void setDriveMode(Enums.DriveMode driveMode) {
     this.driveMode = driveMode;
     gameController.setDriveMode(driveMode);
+    BotToControllerEventBus.emitEvent(ConnectionUtils.createStatus("DRIVE_MODE", driveMode.toString()));
   }
 
   public Enums.DriveMode getDriveMode() {

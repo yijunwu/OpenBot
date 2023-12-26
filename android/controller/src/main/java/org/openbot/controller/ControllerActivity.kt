@@ -35,6 +35,7 @@ class ControllerActivity : /*AppCompat*/
     private val TAG = "ControllerActivity"
     private lateinit var binding: ActivityFullscreenBinding
     private lateinit var screenSelector: ScreenSelector
+    private lateinit var driveMode: DriveMode
 
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -65,17 +66,13 @@ class ControllerActivity : /*AppCompat*/
         subscribe("VIDEO_PROTOCOL", ::onDataReceived)
     }
 
-    override fun dispatchGenericMotionEvent(event: MotionEvent): Boolean {
-        return super.dispatchGenericMotionEvent(event)
-    }
-
     override fun onGenericMotionEvent(event: MotionEvent): Boolean {
         sendJoystickInput(event)
         return false
     }
 
     private fun sendJoystickInput(event: MotionEvent) {
-        val (left, right) = GameController.processJoystickInput(DriveMode.GAME, event, -1)
+        val (left, right) = GameController.processJoystickInput(driveMode, event, -1)
         DriveCommandReducer.filter(right, left)
     }
 
@@ -188,6 +185,15 @@ class ControllerActivity : /*AppCompat*/
                     LocalEventBus.ProgressEvents.AdvertisingFailed -> {
                         screenSelector.hideControls()
                     }
+                    LocalEventBus.ProgressEvents.GameDriveMode -> {
+                        driveMode = DriveMode.GAME
+                    }
+                    LocalEventBus.ProgressEvents.DualDriveMode -> {
+                        driveMode = DriveMode.DUAL
+                    }
+                    LocalEventBus.ProgressEvents.JoystickDriveMode -> {
+                        driveMode = DriveMode.JOYSTICK
+                    }
                 }
             },
             { throwable ->
@@ -252,10 +258,6 @@ class ControllerActivity : /*AppCompat*/
         }
     }
 
-    enum class DriveMode(val value: Int) {
-        DUAL(0), GAME(1), JOYSTICK(2);
-    }
-
     data class Control(val left: Float, val right: Float)
 
     object GameController {
@@ -278,6 +280,7 @@ class ControllerActivity : /*AppCompat*/
             }
             return 0F
         }
+        
         fun processJoystickInput(driveMode: DriveMode, event: MotionEvent?, historyPos: Int): Control {
             return when (driveMode) {
                 DriveMode.DUAL -> {
