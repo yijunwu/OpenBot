@@ -65,6 +65,25 @@ class ControllerActivity : /*AppCompat*/
         subscribe("VIDEO_PROTOCOL", ::onDataReceived)
     }
 
+    override fun dispatchGenericMotionEvent(event: MotionEvent): Boolean {
+        return super.dispatchGenericMotionEvent(event)
+    }
+
+    override fun onGenericMotionEvent(event: MotionEvent): Boolean {
+        sendJoystickInput(event)
+        return false
+    }
+
+    private fun sendJoystickInput(event: MotionEvent) {
+        val leftTrigger = event.downTime / 1000F
+        val rightTrigger = 0.0F
+        val steeringOffset = 0.0F
+        val msg = "{gamepadEvent: {leftTrigger:${leftTrigger}, rightTrigger:${rightTrigger}, steeringOffset:${steeringOffset}}}"
+        ConnectionSelector.getConnection().sendMessage(msg)
+        //val (left, right) = GameController.convertGameToControl(leftTrigger, rightTrigger, steeringOffset)
+        //DriveCommandReducer.filter(right, left)
+    }
+
     @SuppressLint("CheckResult")
     private fun subscribe(subject: String, onDataReceived: (String) -> Unit) {
         StatusEventBus.addSubject(subject)

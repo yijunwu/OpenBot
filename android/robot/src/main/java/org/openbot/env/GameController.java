@@ -6,6 +6,9 @@ import android.util.Pair;
 import android.view.InputDevice;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.openbot.utils.Enums.DriveMode;
 import org.openbot.vehicle.Control;
 
@@ -121,6 +124,22 @@ public class GameController {
         break;
     }
     return new Control(left, right);
+  }
+
+  public Control processJoystickInputFromPhone(JSONObject driveValue, int historyPos) {
+    switch (driveMode) {
+      case GAME:
+        try {
+          float leftTrigger = Float.parseFloat(driveValue.getString("leftTrigger"));
+          float rightTrigger = Float.parseFloat(driveValue.getString("rightTrigger"));
+          float steeringOffset = Float.parseFloat(driveValue.getString("steeringOffset"));
+          return convertGameToControl(leftTrigger, rightTrigger, steeringOffset);
+        } catch (JSONException e) {
+          throw new RuntimeException(e);
+        }
+      default:
+        return new Control(0, 0);
+    }
   }
 
   //TODO: this is the code to process gamepad controller event,

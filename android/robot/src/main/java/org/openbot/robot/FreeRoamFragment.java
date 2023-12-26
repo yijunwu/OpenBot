@@ -277,6 +277,7 @@ public class FreeRoamFragment extends ControlsFragment {
   @Override
   protected void processControllerKeyData(String commandType) {
     switch (commandType) {
+      case Constants.CMD_GAMEPAD_EVENT: //fall through
       case Constants.CMD_DRIVE:
         handleDriveCommand();
         break;
