@@ -15,9 +15,6 @@ import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
 import org.openbot.controller.ConnectionSelector
-import java.util.Timer
-import kotlin.concurrent.timer
-import kotlin.concurrent.timerTask
 import kotlin.system.exitProcess
 
 class ExitButton @JvmOverloads constructor(
@@ -31,10 +28,8 @@ class ExitButton @JvmOverloads constructor(
     inner class OnTouchListener : View.OnTouchListener {
         override fun onTouch(v: View?, event: MotionEvent?): Boolean {
             ConnectionSelector.getConnection().disconnect()
-            //(context as Activity).finish()
-            //Thread.sleep(1000L)
-//            Timer("NameOfMyTimer", true).schedule(timerTask {
-//                exitProcess(0) }, 1000L)
+            (context as Activity).finish()
+            exitProcess(0)
             return true
         }
     }
