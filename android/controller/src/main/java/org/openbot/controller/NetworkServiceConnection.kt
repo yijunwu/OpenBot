@@ -49,7 +49,7 @@ object NetworkServiceConnection : ILocalConnection {
     }
 
     override fun disconnect(context: Context?) {
-        mNsdManager!!.unregisterService(mRegistrationListener)
+        try { mNsdManager!!.unregisterService(mRegistrationListener) } catch (_: Exception) {}
         socketHandler.close()
     }
 
