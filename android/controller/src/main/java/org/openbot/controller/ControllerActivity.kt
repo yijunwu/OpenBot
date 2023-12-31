@@ -222,6 +222,8 @@ class ControllerActivity : /*AppCompat*/
                             or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN)
             @Suppress("DEPRECATION")
             window.addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION)
+            @Suppress("DEPRECATION")
+            window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
         }
     }
 
