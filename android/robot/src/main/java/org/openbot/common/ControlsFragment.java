@@ -52,7 +52,7 @@ public abstract class ControlsFragment extends Fragment implements ServerListene
   protected Animation startAnimation;
   protected SharedPreferencesManager preferencesManager;
   protected PhoneController phoneController;
-  protected Enums.DriveMode currentDriveMode = Enums.DriveMode.GAME;
+  //protected Enums.DriveMode currentDriveMode = Enums.DriveMode.GAME;
 
   protected AudioPlayer audioPlayer;
 
@@ -279,7 +279,7 @@ public abstract class ControlsFragment extends Fragment implements ServerListene
               // That is why we are not calling phoneController.send() here directly.
               BotToControllerEventBus.emitEvent(
                   ConnectionUtils.getStatus(
-                      false, false, false, currentDriveMode.toString(), vehicle.getIndicator()));
+                      false, false, false, vehicle.getDriveMode().toString(), vehicle.getIndicator()));
               break;
 
             case Constants.CMD_DISCONNECTED:
