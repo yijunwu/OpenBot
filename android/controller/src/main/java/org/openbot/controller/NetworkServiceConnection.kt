@@ -94,7 +94,7 @@ object NetworkServiceConnection : ILocalConnection {
     }
 
     class SocketHandler(private val messageQueue: BlockingQueue<String>) {
-        private var client: Socket? = null
+        private lateinit var client: Socket
         private lateinit var serverSocket: ServerSocket
         private lateinit var clientInfo: ClientInfo
 
@@ -102,7 +102,7 @@ object NetworkServiceConnection : ILocalConnection {
         }
 
         fun isConnected(): Boolean {
-            return client?.isClosed() == false
+            return !client.isClosed()
         }
 
         fun connect(port: Int): ClientInfo? {
@@ -111,16 +111,16 @@ object NetworkServiceConnection : ILocalConnection {
                 serverSocket.reuseAddress = true
 
                 while (true) {
-                    client = serverSocket.accept() ?: continue
+                    client = serverSocket.accept()
 
                     // only connect if the app is NOT running on this device.
-                    if (client!!.inetAddress.hostAddress != Utils.getIPAddress(true)) {
+                    if (client.inetAddress.hostAddress != Utils.getIPAddress(true)) {
                         break
                     }
                 }
 
-                val reader = Scanner(DataInputStream(BufferedInputStream(client!!.getInputStream())))
-                val writer = client!!.getOutputStream()
+                val reader = Scanner(DataInputStream(BufferedInputStream(client.getInputStream())))
+                val writer = client.getOutputStream()
 
                 clientInfo = ClientInfo(reader, writer)
 
@@ -128,7 +128,7 @@ object NetworkServiceConnection : ILocalConnection {
                     LocalEventBus.ProgressEvents.ConnectionSuccessful
                 LocalEventBus.onNext(event)
 
-                println("Client connected: ${client!!.inetAddress.hostAddress}")
+                println("Client connected: ${client.inetAddress.hostAddress}")
             } catch (e: Exception) {
                 Log.d(TAG, "Got exception: $e")
                 close()
@@ -179,10 +179,12 @@ object NetworkServiceConnection : ILocalConnection {
         }
 
         fun close() {
-            if (client?.isClosed != false) {
+            if (client.isClosed) {
                 return
             }
-            client!!.close()
+            if (this::client.isInitialized) {
+                client.close()
+            }
             if (this::serverSocket.isInitialized) {
                 serverSocket.close()
             }
