@@ -185,7 +185,19 @@ public class WebRtcServer implements IVideoServer {
         event -> {
           switch (event.getString("command")) {
             case "SWITCH_CAMERA":
-              ((CameraVideoCapturer) videoCapturer).switchCamera(null);
+              //this.videoCapturer.stopCapture();
+              ((CameraVideoCapturer) videoCapturer).switchCamera(new CameraVideoCapturer.CameraSwitchHandler() {
+                @Override
+                public void onCameraSwitchDone(boolean b) {
+                  //WebRtcServer.this.videoCapturer.startCapture(VIDEO_RESOLUTION_WIDTH, VIDEO_RESOLUTION_HEIGHT, FPS);
+                  Log.d("SwitchCamera", "isFrontCamera: " + b);
+                }
+
+                @Override
+                public void onCameraSwitchError(String s) {
+                  Log.d("SwitchCamera", "Error: description: " + s);
+                }
+              });
               break;
           }
         },
