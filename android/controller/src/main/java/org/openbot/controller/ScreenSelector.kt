@@ -22,7 +22,7 @@ data class ScreenSelector (val binding: ActivityFullscreenBinding) {
     }
 
     private fun hideButtons() {
-        binding.botSetupButtons?.hide()
+        binding.botSetupButtons.hide()
     }
 
     private fun hideSliders() {
@@ -66,14 +66,14 @@ data class ScreenSelector (val binding: ActivityFullscreenBinding) {
                         binding.driveModeSlidersLayout.hide()
                         binding.controlModeTiltLayout.start()
                         binding.doubleTapMessage?.start()
+                        binding.botSetupButtons.hide()
                     }
                     LocalEventBus.ProgressEvents.SlidersControl -> {
                         binding.driveModeSlidersLayout.show()
                         binding.controlModeTiltLayout.stop()
+                        binding.botSetupButtons.hide()
                     }
                 }
-
-                binding.botSetupButtons?.hide()
             },
             { throwable ->
                 Log.d(
