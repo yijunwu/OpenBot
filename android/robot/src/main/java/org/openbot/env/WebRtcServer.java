@@ -428,9 +428,9 @@ public class WebRtcServer implements IVideoServer {
   private VideoCapturer createVideoCapturer() {
     VideoCapturer videoCapturer;
     if (useCamera2()) {
-      videoCapturer = createCameraCapturer(new Camera2Enumerator(context));
+      videoCapturer = createCameraCapturer(new Camera2Enumerator(context), true);
     } else {
-      videoCapturer = createCameraCapturer(new Camera1Enumerator(true));
+      videoCapturer = createCameraCapturer(new Camera1Enumerator(true), true);
     }
     return videoCapturer;
   }
@@ -439,18 +439,46 @@ public class WebRtcServer implements IVideoServer {
     return Camera2Enumerator.isSupported(context);
   }
 
-  private VideoCapturer createCameraCapturer(CameraEnumerator enumerator) {
+  private VideoCapturer createCameraCapturer(CameraEnumerator enumerator, Boolean useFrontCamera) {
     final String[] deviceNames = enumerator.getDeviceNames();
+    for (int i = deviceNames.length - 1; i >= 0; i--) {
+      String deviceName = deviceNames[i];
+      if (enumerator.isFrontFacing(deviceName) == useFrontCamera || useFrontCamera == null) {
+        VideoCapturer videoCapturer = enumerator.createCapturer(deviceName, new CameraVideoCapturer.CameraEventsHandler() {
+          @Override
+          public void onCameraError(String s) {
+            Log.d("CameraEventHandler", "Camera error: " + s);
+          }
 
-    for (String deviceName : deviceNames) {
-      if (enumerator.isBackFacing(deviceName)) {
-        VideoCapturer videoCapturer = enumerator.createCapturer(deviceName, null);
+          @Override
+          public void onCameraDisconnected() {
+            Log.d("CameraEventHandler", "Camera disconnected");
+          }
+
+          @Override
+          public void onCameraFreezed(String s) {
+            Log.d("CameraEventHandler", "Camera freezed: " + s);
+          }
+
+          @Override
+          public void onCameraOpening(String s) {
+            Log.d("CameraEventHandler", "Camera opening: " + s);
+          }
+
+          @Override
+          public void onFirstFrameAvailable() {
+          }
+
+          @Override
+          public void onCameraClosed() {
+            Log.d("CameraEventHandler", "Camera closed");
+          }
+        });
         if (videoCapturer != null) {
           return videoCapturer;
         }
       }
     }
-
     return null;
   }
 
