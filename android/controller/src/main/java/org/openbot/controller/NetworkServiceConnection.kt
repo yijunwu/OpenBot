@@ -12,6 +12,7 @@ import org.openbot.controller.utils.Utils
 import java.io.BufferedInputStream
 import java.io.DataInputStream
 import java.io.OutputStream
+import java.lang.Thread.yield
 import java.net.ServerSocket
 import java.net.Socket
 import java.nio.charset.Charset
@@ -49,7 +50,15 @@ object NetworkServiceConnection : ILocalConnection {
     }
 
     override fun disconnect(context: Context?) {
-        try { mNsdManager!!.unregisterService(mRegistrationListener) } catch (_: Exception) {}
+        try {
+            mRegistrationListener.unregisterFinished = false
+            mNsdManager!!.unregisterService(mRegistrationListener)
+            while(!mRegistrationListener.unregisterFinished) {
+                yield(); continue
+            }
+        } catch (e: Exception) {
+            Log.d(TAG, "Got exception: $e")
+        }
         socketHandler.close()
     }
 
@@ -206,7 +215,8 @@ object NetworkServiceConnection : ILocalConnection {
         )
     }
 
-    var mRegistrationListener: RegistrationListener = object : RegistrationListener {
+    object mRegistrationListener: RegistrationListener {
+        var unregisterFinished: Boolean = false
         override fun onServiceRegistered(NsdServiceInfo: NsdServiceInfo) {
             val mServiceName = NsdServiceInfo.serviceName
             SERVICE_NAME = mServiceName
@@ -223,6 +233,7 @@ object NetworkServiceConnection : ILocalConnection {
 
         override fun onServiceUnregistered(serviceInfo: NsdServiceInfo) {
             Log.d(TAG, "Service Unregistered : " + serviceInfo.serviceName)
+            unregisterFinished = true
         }
 
         override fun onUnregistrationFailed(serviceInfo: NsdServiceInfo, errorCode: Int) {
