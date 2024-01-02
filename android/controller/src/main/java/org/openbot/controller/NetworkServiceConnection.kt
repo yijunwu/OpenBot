@@ -179,11 +179,12 @@ object NetworkServiceConnection : ILocalConnection {
         }
 
         fun close() {
-            if (client.isClosed) {
-                return
-            }
             if (this::client.isInitialized) {
-                client.close()
+                if (client.isClosed) {
+                    return
+                } else {
+                    client.close()
+                }
             }
             if (this::serverSocket.isInitialized) {
                 serverSocket.close()
