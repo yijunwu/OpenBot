@@ -43,7 +43,7 @@ public class FreeRoamFragment extends ControlsFragment {
   public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
     super.onViewCreated(view, savedInstanceState);
 
-    phoneController = PhoneController.getInstance(requireContext());
+    phoneController = PhoneController.getInstance(requireContext(), null);
 
     binding.voltageInfo.setText(getString(R.string.voltageInfo, "--.-"));
     binding.controllerContainer.speedInfo.setText(getString(R.string.speedInfo, "---,---"));
@@ -252,7 +252,7 @@ public class FreeRoamFragment extends ControlsFragment {
 
   private void connectPhoneController() {
     phoneController.connect(requireContext());
-    DriveMode oldDriveMode = currentDriveMode;
+    DriveMode oldDriveMode = vehicle.getDriveMode();
     // Currently only dual drive mode supported
     setDriveMode(DriveMode.DUAL);
     binding.controllerContainer.driveMode.setAlpha(0.5f);
@@ -262,6 +262,9 @@ public class FreeRoamFragment extends ControlsFragment {
 
   private void connectPhoneControllerForCompound() {
     phoneController.connect(requireContext());
+    setDriveMode(DriveMode.getByID(preferencesManager.getDriveMode()));
+    binding.controllerContainer.driveMode.setEnabled(true);
+    binding.controllerContainer.driveMode.setAlpha(1.0f);
     //TODO: Currently no need to set driveMode to dual,
     // will need to add another variable to save phone drive mode if we support multiple drive
     // mode for phone controller since we now support COMPOUND control mode
@@ -299,8 +302,8 @@ public class FreeRoamFragment extends ControlsFragment {
 
       case Constants.CMD_DISCONNECTED:
         handleDriveCommand();
-        //disconnectPhoneController();
-        //setControlMode(ControlMode.getByID(preferencesManager.getControlMode()));
+        disconnectPhoneController();
+        setControlMode(ControlMode.getByID(preferencesManager.getControlMode()));
         break;
 
       case Constants.CMD_SPEED_DOWN:

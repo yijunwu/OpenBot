@@ -212,6 +212,15 @@
                     android:background="@drawable/button"
                     app:icon="@drawable/ic_cameraswitch_black_24dp" />
 
+                <org.openbot.controller.customComponents.SwitchDriveMode
+                    android:id="@+id/switch_drive_mode"
+                    style="@style/IconOnlyButton"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:layout_gravity="center"
+                    android:background="@drawable/button"
+                    app:icon="@drawable/ic_game" />
+
             </LinearLayout>
 
             <LinearLayout

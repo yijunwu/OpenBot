@@ -26,6 +26,7 @@ import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.openbot.R;
 import org.openbot.env.AudioPlayer;
+import org.openbot.env.BitmapFrameCapturer;
 import org.openbot.env.BotToControllerEventBus;
 import org.openbot.env.ControllerToBotEventBus;
 import org.openbot.env.PhoneController;
@@ -52,7 +53,7 @@ public abstract class ControlsFragment extends Fragment implements ServerListene
   protected Animation startAnimation;
   protected SharedPreferencesManager preferencesManager;
   protected PhoneController phoneController;
-  protected Enums.DriveMode currentDriveMode = Enums.DriveMode.GAME;
+  //protected Enums.DriveMode currentDriveMode = Enums.DriveMode.GAME;
 
   protected AudioPlayer audioPlayer;
 
@@ -65,6 +66,9 @@ public abstract class ControlsFragment extends Fragment implements ServerListene
   private ArrayAdapter<String> serverAdapter;
   private Spinner modelSpinner;
   private Spinner serverSpinner;
+
+  protected BitmapFrameCapturer videoCapturer = new BitmapFrameCapturer();
+
 
   @Override
   public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -80,7 +84,7 @@ public abstract class ControlsFragment extends Fragment implements ServerListene
         .getWindow()
         .addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-    phoneController = PhoneController.getInstance(requireContext());
+    phoneController = PhoneController.getInstance(requireContext(), videoCapturer);
 
     audioPlayer = new AudioPlayer(requireContext());
     masterList = FileUtils.loadConfigJSONFromAsset(requireActivity());
@@ -186,8 +190,7 @@ public abstract class ControlsFragment extends Fragment implements ServerListene
   }
 
   protected void processKeyEvent(KeyEvent keyCode) {
-    if (Enums.ControlMode.getByID(preferencesManager.getControlMode())
-        == Enums.ControlMode.GAMEPAD) {
+    if (isGamepadControlEnabled()) {
       switch (keyCode.getKeyCode()) {
         case KeyEvent.KEYCODE_BUTTON_X: // square
           toggleIndicatorEvent(Enums.VehicleIndicator.LEFT.getValue());
@@ -233,6 +236,11 @@ public abstract class ControlsFragment extends Fragment implements ServerListene
     }
   }
 
+  private boolean isGamepadControlEnabled() {
+    Enums.ControlMode controlMode = Enums.ControlMode.getByID(preferencesManager.getControlMode());
+    return controlMode == Enums.ControlMode.GAMEPAD || controlMode == Enums.ControlMode.COMPOUND;
+  }
+
   private void handlePhoneControllerEvents() {
     ControllerToBotEventBus.subscribe(
         this.getClass().getSimpleName(),
@@ -275,7 +283,7 @@ public abstract class ControlsFragment extends Fragment implements ServerListene
               // That is why we are not calling phoneController.send() here directly.
               BotToControllerEventBus.emitEvent(
                   ConnectionUtils.getStatus(
-                      false, false, false, currentDriveMode.toString(), vehicle.getIndicator()));
+                      false, false, false, vehicle.getDriveMode().toString(), vehicle.getIndicator()));
               break;
 
             case Constants.CMD_DISCONNECTED:
