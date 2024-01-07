@@ -87,6 +87,10 @@ public class WebRtcServer implements IVideoServer {
 
   public WebRtcServer() {}
 
+  public WebRtcServer(VideoCapturer videoCapturer) {
+    this.videoCapturer = videoCapturer;
+  }
+
   // IVideoServer Interface
   @Override
   public void init(Context context) {
@@ -186,19 +190,21 @@ public class WebRtcServer implements IVideoServer {
           switch (event.getString("command")) {
             case "SWITCH_CAMERA":
               //this.videoCapturer.stopCapture();
-              ((CameraVideoCapturer) videoCapturer).switchCamera(new CameraVideoCapturer.CameraSwitchHandler() {
-                @Override
-                public void onCameraSwitchDone(boolean b) {
-                  //WebRtcServer.this.videoCapturer.startCapture(VIDEO_RESOLUTION_WIDTH, VIDEO_RESOLUTION_HEIGHT, FPS);
-                  Log.d("SwitchCamera", "isFrontCamera: " + b);
-                }
+              if (videoCapturer instanceof CameraVideoCapturer) {
+                ((CameraVideoCapturer) videoCapturer).switchCamera(new CameraVideoCapturer.CameraSwitchHandler() {
+                  @Override
+                  public void onCameraSwitchDone(boolean b) {
+                    //WebRtcServer.this.videoCapturer.startCapture(VIDEO_RESOLUTION_WIDTH, VIDEO_RESOLUTION_HEIGHT, FPS);
+                    Log.d("SwitchCamera", "isFrontCamera: " + b);
+                  }
 
-                @Override
-                public void onCameraSwitchError(String s) {
-                  Log.d("SwitchCamera", "Error: description: " + s);
-                }
-              });
-              break;
+                  @Override
+                  public void onCameraSwitchError(String s) {
+                    Log.d("SwitchCamera", "Error: description: " + s);
+                  }
+                });
+                break;
+              }
           }
         },
         error -> {
@@ -386,9 +392,12 @@ public class WebRtcServer implements IVideoServer {
     BotToControllerEventBus.emitEvent(ConnectionUtils.createStatus("WEB_RTC_EVENT", message));
   }
 
+  // TODO yijunwu refer to this method to recreate video capture when switching camera
   private void createVideoTrackFromCameraAndShowIt() {
     audioConstraints = new MediaConstraints();
-    videoCapturer = createVideoCapturer();
+    if (videoCapturer == null) {
+      videoCapturer = createVideoCapturer();
+    }
     VideoSource videoSource = factory.createVideoSource(videoCapturer.isScreencast());
 
     surfaceTextureHelper =

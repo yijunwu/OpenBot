@@ -11,6 +11,8 @@ import org.openbot.R;
 import org.openbot.customview.AutoFitSurfaceGlView;
 import org.openbot.customview.WebRTCSurfaceView;
 import org.openbot.utils.CameraUtils;
+import org.webrtc.VideoCapturer;
+
 import timber.log.Timber;
 
 @SuppressWarnings("ResultOfMethodCallIgnored")
@@ -21,13 +23,13 @@ public class PhoneController {
   private IVideoServer videoServer;
   private View view = null;
 
-  public static PhoneController getInstance(Context context) {
+  public static PhoneController getInstance(Context context, VideoCapturer videoCapturer) {
     if (_phoneController == null) { // Check for the first time
 
       synchronized (PhoneController.class) { // Check for the second time.
         // if there is no instance available... create new one
         if (_phoneController == null) _phoneController = new PhoneController();
-        _phoneController.init(context);
+        _phoneController.init(context, videoCapturer);
       }
     }
 
@@ -41,13 +43,13 @@ public class PhoneController {
     }
   }
 
-  private void init(Context context) {
+  private void init(Context context, VideoCapturer videoCapturer) {
     ControllerConfig.getInstance().init(context);
 
     videoServer =
         "RTSP".equals(ControllerConfig.getInstance().getVideoServerType())
             ? new RtspServer()
-            : new WebRtcServer();
+            : new WebRtcServer(videoCapturer);
 
     videoServer.init(context);
     videoServer.setCanStart(true);

@@ -26,6 +26,7 @@ import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.openbot.R;
 import org.openbot.env.AudioPlayer;
+import org.openbot.env.BitmapFrameCapturer;
 import org.openbot.env.BotToControllerEventBus;
 import org.openbot.env.ControllerToBotEventBus;
 import org.openbot.env.PhoneController;
@@ -66,6 +67,9 @@ public abstract class ControlsFragment extends Fragment implements ServerListene
   private Spinner modelSpinner;
   private Spinner serverSpinner;
 
+  protected BitmapFrameCapturer videoCapturer = new BitmapFrameCapturer();
+
+
   @Override
   public void onCreate(@Nullable Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
@@ -80,7 +84,7 @@ public abstract class ControlsFragment extends Fragment implements ServerListene
         .getWindow()
         .addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-    phoneController = PhoneController.getInstance(requireContext());
+    phoneController = PhoneController.getInstance(requireContext(), videoCapturer);
 
     audioPlayer = new AudioPlayer(requireContext());
     masterList = FileUtils.loadConfigJSONFromAsset(requireActivity());
