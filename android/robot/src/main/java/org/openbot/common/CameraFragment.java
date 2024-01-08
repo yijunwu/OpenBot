@@ -133,8 +133,12 @@ public abstract class CameraFragment extends ControlsFragment {
           converter.yuvToRgb(image.getImage(), bitmapBuffer);
           image.close();
 
-          if (videoCapturer.capturerObserver != null && videoCapturer.active) {
-            videoCapturer.pushBitmap(bitmapBuffer, 270);
+          if (videoCapturer instanceof BitmapFrameCapturer) {
+            BitmapFrameCapturer bitmapFrameCapturer = (BitmapFrameCapturer)videoCapturer;
+
+            if (bitmapFrameCapturer.capturerObserver != null && bitmapFrameCapturer.active) {
+              bitmapFrameCapturer.pushBitmap(bitmapBuffer, 270);
+            }
           }
           processFrame(bitmapBuffer, image);
         });
@@ -198,6 +202,11 @@ public abstract class CameraFragment extends ControlsFragment {
       else this.analyserResolution = resolutionSize;
     }
     bindCameraUseCases();
+  }
+
+  @Override
+  protected boolean useBitmapVideoCapturer() {
+    return true;
   }
 
   protected abstract void processFrame(Bitmap image, ImageProxy imageProxy);

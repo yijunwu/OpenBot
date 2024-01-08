@@ -1,5 +1,6 @@
 package org.openbot.common;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -43,6 +44,12 @@ import org.openbot.utils.FormatUtils;
 import org.openbot.utils.PermissionUtils;
 import org.openbot.vehicle.Control;
 import org.openbot.vehicle.Vehicle;
+import org.webrtc.Camera1Enumerator;
+import org.webrtc.Camera2Enumerator;
+import org.webrtc.CameraEnumerator;
+import org.webrtc.CameraVideoCapturer;
+import org.webrtc.VideoCapturer;
+
 import timber.log.Timber;
 
 public abstract class ControlsFragment extends Fragment implements ServerListener {
@@ -67,8 +74,72 @@ public abstract class ControlsFragment extends Fragment implements ServerListene
   private Spinner modelSpinner;
   private Spinner serverSpinner;
 
-  protected BitmapFrameCapturer videoCapturer = new BitmapFrameCapturer();
+  protected VideoCapturer videoCapturer;
 
+  protected abstract boolean useBitmapVideoCapturer();
+
+  protected VideoCapturer createVideoCapturer() {
+    VideoCapturer videoCapturer;
+    Context context = requireContext();
+    if (useBitmapVideoCapturer()) {
+      videoCapturer = new BitmapFrameCapturer();
+    } else {
+      if (useCamera2(context)) {
+        videoCapturer = createCameraCapturer(new Camera2Enumerator(context), true);
+      } else {
+        videoCapturer = createCameraCapturer(new Camera1Enumerator(true), true);
+      }
+    }
+    return videoCapturer;
+  }
+
+
+  private VideoCapturer createCameraCapturer(CameraEnumerator enumerator, Boolean useFrontCamera) {
+    final String[] deviceNames = enumerator.getDeviceNames();
+    for (int i = deviceNames.length - 1; i >= 0; i--) {
+      String deviceName = deviceNames[i];
+      if (enumerator.isFrontFacing(deviceName) == useFrontCamera || useFrontCamera == null) {
+        VideoCapturer videoCapturer = enumerator.createCapturer(deviceName, new CameraVideoCapturer.CameraEventsHandler() {
+          @Override
+          public void onCameraError(String s) {
+            Log.d("CameraEventHandler", "Camera error: " + s);
+          }
+
+          @Override
+          public void onCameraDisconnected() {
+            Log.d("CameraEventHandler", "Camera disconnected");
+          }
+
+          @Override
+          public void onCameraFreezed(String s) {
+            Log.d("CameraEventHandler", "Camera freezed: " + s);
+          }
+
+          @Override
+          public void onCameraOpening(String s) {
+            Log.d("CameraEventHandler", "Camera opening: " + s);
+          }
+
+          @Override
+          public void onFirstFrameAvailable() {
+          }
+
+          @Override
+          public void onCameraClosed() {
+            Log.d("CameraEventHandler", "Camera closed");
+          }
+        });
+        if (videoCapturer != null) {
+          return videoCapturer;
+        }
+      }
+    }
+    return null;
+  }
+
+  private boolean useCamera2(Context context) {
+    return Camera2Enumerator.isSupported(context);
+  }
 
   @Override
   public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -84,6 +155,7 @@ public abstract class ControlsFragment extends Fragment implements ServerListene
         .getWindow()
         .addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
+    videoCapturer = createVideoCapturer();
     phoneController = PhoneController.getInstance(requireContext(), videoCapturer);
 
     audioPlayer = new AudioPlayer(requireContext());

@@ -38,6 +38,11 @@ public class FreeRoamFragment extends ControlsFragment {
     return binding.getRoot();
   }
 
+  @Override
+  protected boolean useBitmapVideoCapturer() {
+    return false;
+  }
+
   @SuppressLint("RestrictedApi")
   @Override
   public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
