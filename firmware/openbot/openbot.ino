@@ -54,7 +54,7 @@
 //------------------------------------------------------//
 
 // Setup the OpenBot version (DIY, PCB_V1, PCB_V2, RTR_TT, RC_CAR, LITE, RTR_TT2, RTR_520, DIY_ESP32)
-#define OPENBOT DIY
+#define OPENBOT DIY_ESP32
 
 //------------------------------------------------------//
 // SETTINGS - Global settings
@@ -69,7 +69,7 @@
 #define NO_PHONE_MODE 0
 
 // Enable/Disable debug print (1,0)
-#define DEBUG 0
+#define DEBUG 1
 
 // Enable/Disable coast mode (1,0)
 // When no control is applied, the robot will either coast (1) or actively stop (0)
@@ -479,7 +479,9 @@ const int RHS_PWM_OUT = 1;
 const String robot_type = "DIY_ESP32";
 #define MCU ESP32
 #include <esp_wifi.h>
-#define HAS_BLUETOOTH 1
+#include <esp_task_wdt.h>
+#include "rtc_wdt.h"
+#define HAS_BLUETOOTH 0
 #define analogWrite ledcWrite
 #define attachPinChangeInterrupt attachInterrupt
 #define detachPinChangeInterrupt detachInterrupt
@@ -488,16 +490,17 @@ const String robot_type = "DIY_ESP32";
 #define PIN_PWM_L2 CH_PWM_L2
 #define PIN_PWM_R1 CH_PWM_R1
 #define PIN_PWM_R2 CH_PWM_R2
-#define HAS_VOLTAGE_DIVIDER 1
+#define HAS_VOLTAGE_DIVIDER 0
 const float VOLTAGE_DIVIDER_FACTOR = (30 + 10) / 10;
 const float VOLTAGE_MIN = 6.0f;
 const float VOLTAGE_LOW = 9.0f;
 const float VOLTAGE_MAX = 12.6f;
 const float ADC_FACTOR = 3.3 / 4095;
-#define HAS_INDICATORS 1
-#define HAS_SONAR 1
+#define HAS_INDICATORS 0
+#define HAS_SONAR 0
 #define SONAR_MEDIAN 0
-#define HAS_SPEED_SENSORS_FRONT 1
+#define HAS_SPEED_SENSORS_FRONT 0
+#define HAS_OLED 1
 //PWM properties
 const int FREQ = 5000;
 const int RES = 8;
@@ -592,7 +595,7 @@ class MyServerCallbacks : public BLEServerCallbacks {
 
 class MyCallbacks : public BLECharacteristicCallbacks {
   void onWrite(BLECharacteristic *pCharacteristic) {
-    std::string bleReceiver = pCharacteristic->getValue();
+    String bleReceiver = pCharacteristic->getValue();
     if (bleReceiver.length() > 0) {
       for (int i = 0; i < bleReceiver.length(); i++) {
         on_ble_rx(bleReceiver[i]);
@@ -830,25 +833,29 @@ void setup() {
 
 #if (MCU == ESP32)
   esp_wifi_deinit();
+  //esp_task_wdt_init(30, false);  // 设置看门狗超时为30秒
+  //rtc_wdt_protect_off();    // Turns off the automatic wdt service
+  // rtc_wdt_enable();         // Turn it on manually
+  // rtc_wdt_set_time(RTC_WDT_STAGE0, 30000);  // Define how long you desire to let dog wait.
 #endif
 
 #if (MCU == ESP32 && OPENBOT != MTV)
   // PWMs
   // Configure PWM functionalitites
-  ledcSetup(CH_PWM_L1, FREQ, RES);
-  ledcSetup(CH_PWM_L2, FREQ, RES);
-  ledcSetup(CH_PWM_R1, FREQ, RES);
-  ledcSetup(CH_PWM_R2, FREQ, RES);
+  // ledcSetup(CH_PWM_L1, FREQ, RES);
+  // ledcSetup(CH_PWM_L2, FREQ, RES);
+  // ledcSetup(CH_PWM_R1, FREQ, RES);
+  // ledcSetup(CH_PWM_R2, FREQ, RES);
 
   // Attach the channel to the GPIO to be controlled
-  ledcAttachPin(PIN_PWM_LF1, CH_PWM_L1);
-  ledcAttachPin(PIN_PWM_LB1, CH_PWM_L1);
-  ledcAttachPin(PIN_PWM_LF2, CH_PWM_L2);
-  ledcAttachPin(PIN_PWM_LB2, CH_PWM_L2);
-  ledcAttachPin(PIN_PWM_RF1, CH_PWM_R1);
-  ledcAttachPin(PIN_PWM_RB1, CH_PWM_R1);
-  ledcAttachPin(PIN_PWM_RF2, CH_PWM_R2);
-  ledcAttachPin(PIN_PWM_RB2, CH_PWM_R2);
+  ledcAttach(PIN_PWM_LF1, FREQ, RES);
+  ledcAttach(PIN_PWM_LB1, FREQ, RES);
+  ledcAttach(PIN_PWM_LF2, FREQ, RES);
+  ledcAttach(PIN_PWM_LB2, FREQ, RES);
+  ledcAttach(PIN_PWM_RF1, FREQ, RES);
+  ledcAttach(PIN_PWM_RB1, FREQ, RES);
+  ledcAttach(PIN_PWM_RF2, FREQ, RES);
+  ledcAttach(PIN_PWM_RB2, FREQ, RES);
 
 #if (HAS_LEDS_BACK)
   ledcSetup(CH_LED_LB, FREQ, RES);
@@ -885,16 +892,16 @@ void setup() {
 #if (OPENBOT == DIY_ESP32)
   // PWMs
   // Configure PWM functionalitites
-  ledcSetup(CH_PWM_L1, FREQ, RES);
-  ledcSetup(CH_PWM_L2, FREQ, RES);
-  ledcSetup(CH_PWM_R1, FREQ, RES);
-  ledcSetup(CH_PWM_R2, FREQ, RES);
 
+  //ledcSetup(CH_PWM_L1, FREQ, RES);
+  //ledcSetup(CH_PWM_L2, FREQ, RES);
+  //ledcSetup(CH_PWM_R1, FREQ, RES);
+  //ledcSetup(CH_PWM_R2, FREQ, RES);
   // Attach the channel to the GPIO to be controlled
-  ledcAttachPin(PIN_PWM_L1, CH_PWM_L1);
-  ledcAttachPin(PIN_PWM_L2, CH_PWM_L2);
-  ledcAttachPin(PIN_PWM_R1, CH_PWM_R1);
-  ledcAttachPin(PIN_PWM_R2, CH_PWM_R2);
+  ledcAttach(PIN_PWM_L1, FREQ, RES);
+  ledcAttach(PIN_PWM_L2, FREQ, RES);
+  ledcAttach(PIN_PWM_R1, FREQ, RES);
+  ledcAttach(PIN_PWM_R2, FREQ, RES);
 #endif
 
   Serial.begin(115200, SERIAL_8N1);
@@ -926,13 +933,18 @@ void setup() {
   bleServer->getAdvertising()->start();
   Serial.println("Waiting a client connection to notify...");
 #endif
+
+  //esp_task_wdt_init(30, false);  // 设置看门狗超时为30秒
+  Serial.println("setup() finished *********************");
 }
 
 //------------------------------------------------------//
 //LOOP
 //------------------------------------------------------//
 void loop() {
-
+  Serial.println("in loop()9c_no_delay*********************");
+  delay(10);
+//   //esp_task_wdt_reset();
 #if (HAS_BLUETOOTH)
   // disconnecting
   if (!deviceConnected && oldDeviceConnected) {
@@ -947,6 +959,7 @@ void loop() {
   }
 #endif
 
+//   //esp_task_wdt_reset();
 #if (NO_PHONE_MODE)
   if ((millis() - turn_direction_time) >= turn_direction_interval) {
     turn_direction_time = millis();
@@ -976,6 +989,7 @@ void loop() {
     digitalWrite(PIN_LED_LI, HIGH);
     digitalWrite(PIN_LED_RI, HIGH);
   }
+  //esp_task_wdt_reset();
   // Flip controls if needed and set indicator light
   if (ctrl_left != ctrl_right) {
     if (turn_direction > 0) {
@@ -989,6 +1003,7 @@ void loop() {
       digitalWrite(PIN_LED_RI, HIGH);
     }
   }
+  //esp_task_wdt_reset();
 
   // Enforce limits
   ctrl_left = ctrl_left > 0 ? max(ctrl_min, min(ctrl_left, ctrl_max)) : min(-ctrl_min, max(ctrl_left, -ctrl_max));
@@ -1006,6 +1021,7 @@ void loop() {
     ctrl_right = 0;
   }
 #endif
+//esp_task_wdt_reset();
 
 #if HAS_BUMPER
   if (analogRead(PIN_BUMPER) > BUMPER_NOISE && !bumper_event) {
@@ -1027,7 +1043,9 @@ void loop() {
     update_vehicle();
   }
 #else
+  //esp_task_wdt_reset();
   update_vehicle();
+  //esp_task_wdt_reset();
 #endif
 
 #if HAS_VOLTAGE_DIVIDER
@@ -1090,7 +1108,9 @@ void loop() {
 #if (HAS_OLED || DEBUG)
   // Display vehicle measurments for via serial every display_interval
   if ((millis() - display_time) >= display_interval) {
+    //esp_task_wdt_reset();
     display_vehicle_data();
+    //esp_task_wdt_reset();
     display_time = millis();
   }
 #endif
@@ -1504,6 +1524,8 @@ void process_feature_msg() {
 }
 
 void on_serial_rx() {
+  //if (true) return;
+
   char inChar = Serial.read();
   if (inChar != endChar) {
     switch (msgPart) {
