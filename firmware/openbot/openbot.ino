@@ -655,15 +655,20 @@ unsigned int distance_estimate = -1;    //cm
 #if (HAS_OLED)
 #include <SPI.h>
 #include <Wire.h>
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
+//#include <Adafruit_GFX.h>
+//#include <Adafruit_SSD1306.h>
+
+#include <TFT_eSPI.h>
 
 const int OLED_RESET = -1;  // not used
-Adafruit_SSD1306 display(OLED_RESET);
+//Adafruit_SSD1306 display(OLED_RESET);
 
 // OLED Display SSD1306
 const unsigned int SCREEN_WIDTH = 128;  // OLED display width, in pixels
-const unsigned int SCREEN_HEIGHT = 32;  // OLED display height, in pixels
+const unsigned int SCREEN_HEIGHT = 64;  // OLED display height, in pixels
+
+TFT_eSPI tft = TFT_eSPI();
+
 #endif
 
 //Vehicle Control
@@ -771,7 +776,9 @@ void setup() {
 #endif
   // Initialize with the I2C addr 0x3C
 #if (HAS_OLED)
-  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+  //display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+  tft.init();
+  tft.fillScreen(TFT_BLUE);
 #endif
 #if (HAS_INDICATORS)
   pinMode(PIN_LED_LI, OUTPUT);
@@ -944,7 +951,7 @@ void setup() {
 //LOOP
 //------------------------------------------------------//
 void loop() {
-  Serial.println("in loop()9c_no_delay*********************");
+  //Serial.println("in loop()9c_tft_espi*********************");
   delay(10);
 //   //esp_task_wdt_reset();
 #if (HAS_BLUETOOTH)
@@ -1610,25 +1617,31 @@ void parse_msg() {
 #if HAS_OLED
 // Function for drawing a string on the OLED display
 void drawString(String line1, String line2, String line3, String line4) {
-  display.clearDisplay();
-  // set text color
-  display.setTextColor(WHITE);
-  // set text size
-  display.setTextSize(1);
-  // set text cursor position
-  display.setCursor(1, 0);
-  // show text
-  display.println(line1);
-  display.setCursor(1, 8);
-  // show text
-  display.println(line2);
-  display.setCursor(1, 16);
-  // show text
-  display.println(line3);
-  display.setCursor(1, 24);
-  // show text
-  display.println(line4);
-  display.display();
+  // display.clearDisplay();
+  // // set text color
+  // display.setTextColor(WHITE);
+  // // set text size
+  // display.setTextSize(1);
+  // // set text cursor position
+  // display.setCursor(1, 0);
+  // // show text
+  // display.println(line1);
+  // display.setCursor(1, 8);
+  // // show text
+  // display.println(line2);
+  // display.setCursor(1, 16);
+  // // show text
+  // display.println(line3);
+  // display.setCursor(1, 24);
+  // // show text
+  // display.println(line4);
+  // display.display();
+
+  tft.setTextColor(TFT_WHITE);
+  tft.drawString(line1, 10, 10);
+  tft.drawString(line2, 10, 20);
+  tft.drawString(line3, 10, 30);
+  tft.drawString(line4, 10, 40);
 }
 #endif
 
