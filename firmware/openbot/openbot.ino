@@ -480,6 +480,7 @@ const String robot_type = "DIY_ESP32";
 #define MCU ESP32
 #include <esp_wifi.h>
 #include <esp_task_wdt.h>
+//#include <USB.h>
 #include "rtc_wdt.h"
 #define HAS_BLUETOOTH 0
 #define analogWrite ledcWrite
@@ -833,6 +834,7 @@ void setup() {
 
 #if (MCU == ESP32)
   esp_wifi_deinit();
+  //USB.begin();
   //esp_task_wdt_init(30, false);  // 设置看门狗超时为30秒
   //rtc_wdt_protect_off();    // Turns off the automatic wdt service
   // rtc_wdt_enable();         // Turn it on manually
@@ -1633,6 +1635,11 @@ void drawString(String line1, String line2, String line3, String line4) {
 #if (HAS_OLED || DEBUG)
 
 void display_vehicle_data() {
+  bool phone_connected = false;
+  if (Serial.available() > 0 /*|| USBCDC.connected()*/) {
+    phone_connected = true;
+  }
+  String phone_status_str = String("Phone connected: ") + String(phone_connected ? "Yes" : "No");
 #if HAS_VOLTAGE_DIVIDER
   float voltage_value = get_voltage();
   String voltage_str = String("Voltage:    ") + String(voltage_value, 2);
@@ -1653,7 +1660,7 @@ void display_vehicle_data() {
 #endif
 #if DEBUG
   Serial.println("------------------");
-  Serial.println(voltage_str);
+  Serial.println(phone_status_str);
   Serial.println(left_rpm_str);
   Serial.println(right_rpm_str);
   Serial.println(distance_str);
@@ -1662,7 +1669,7 @@ void display_vehicle_data() {
 #if HAS_OLED
   // Set display information
   drawString(
-    voltage_str,
+    phone_status_str,
     left_rpm_str,
     right_rpm_str,
     distance_str);
