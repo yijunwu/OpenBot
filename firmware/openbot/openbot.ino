@@ -487,10 +487,10 @@ const String robot_type = "DIY_ESP32";
 #define attachPinChangeInterrupt attachInterrupt
 #define detachPinChangeInterrupt detachInterrupt
 #define digitalPinToPinChangeInterrupt digitalPinToInterrupt
-#define PIN_PWM_L1 CH_PWM_L1
-#define PIN_PWM_L2 CH_PWM_L2
-#define PIN_PWM_R1 CH_PWM_R1
-#define PIN_PWM_R2 CH_PWM_R2
+const int PIN_PWM_L1 = 13;
+const int PIN_PWM_L2 = 12;
+const int PIN_PWM_R1 = 27;
+const int PIN_PWM_R2 = 33;
 #define HAS_VOLTAGE_DIVIDER 0
 const float VOLTAGE_DIVIDER_FACTOR = (30 + 10) / 10;
 const float VOLTAGE_MIN = 6.0f;
