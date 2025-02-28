@@ -498,7 +498,7 @@ const float VOLTAGE_LOW = 9.0f;
 const float VOLTAGE_MAX = 12.6f;
 const float ADC_FACTOR = 3.3 / 4095;
 #define HAS_INDICATORS 0
-#define HAS_SONAR 0
+#define HAS_SONAR 1
 #define SONAR_MEDIAN 0
 #define HAS_SPEED_SENSORS_FRONT 0
 #define HAS_OLED 1
