@@ -1,4 +1,4 @@
-package info.dourok.voicebot.protocol
+package org.openbot.protocol
 
 import android.util.Log
 import kotlinx.coroutines.*

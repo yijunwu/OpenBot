@@ -1,4 +1,4 @@
-package info.dourok.voicebot
+package org.openbot
 
 import android.media.AudioAttributes
 import android.media.AudioFormat

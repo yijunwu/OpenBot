@@ -1,9 +1,7 @@
-package info.dourok.voicebot.data.model
+package org.openbot.data.model
 
-import androidx.compose.ui.text.toLowerCase
 import org.json.JSONArray
 import org.json.JSONObject
-import java.util.Locale
 import java.util.UUID
 import kotlin.random.Random
 

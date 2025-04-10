@@ -1,4 +1,4 @@
-package info.dourok.voicebot
+package org.openbot
 
 import android.annotation.SuppressLint
 import android.media.AudioFormat

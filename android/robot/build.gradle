@@ -110,6 +110,10 @@ dependencies {
     implementation 'com.google.firebase:firebase-firestore:24.5.0'
     implementation 'com.google.firebase:firebase-storage:20.1.0'
 
+    implementation 'org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5'  // MQTT核心协议库
+    implementation 'org.eclipse.paho:org.eclipse.paho.android.service:1.1.1'
+    //implementation 'androidx.lifecycle:lifecycle-viewmodel-android:2.8.7'// Android服务扩展库
+
     def nav_version = "2.3.5"
     // Java language implementation
     implementation "androidx.navigation:navigation-fragment:$nav_version"

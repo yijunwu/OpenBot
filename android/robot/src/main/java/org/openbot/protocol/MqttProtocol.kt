@@ -1,12 +1,12 @@
-package info.dourok.voicebot.protocol
+package org.openbot.protocol
 
 import android.content.Context
 import android.util.Log
-import info.dourok.voicebot.data.model.MqttConfig
-import info.mqtt.android.service.MqttAndroidClient
 import kotlinx.coroutines.*
+import org.eclipse.paho.android.service.MqttAndroidClient
 import org.eclipse.paho.client.mqttv3.*
 import org.json.JSONObject
+import org.openbot.data.model.MqttConfig
 import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetAddress

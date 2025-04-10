@@ -1,4 +1,4 @@
-package info.dourok.voicebot.data.model
+package org.openbot.data.model
 
 // :feature:form/data/model/ServerFormData.kt
 data class ServerFormData(

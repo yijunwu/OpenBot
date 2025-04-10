@@ -1,4 +1,4 @@
-package info.dourok.voicebot.data.model
+package org.openbot.data.model
 
 import org.json.JSONObject
 

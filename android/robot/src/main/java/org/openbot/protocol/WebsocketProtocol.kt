@@ -1,11 +1,10 @@
-package info.dourok.voicebot.protocol
+package org.openbot.protocol
 import android.util.Log
-import info.dourok.voicebot.data.model.DeviceInfo
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
 import okhttp3.*
 import okio.ByteString
 import org.json.JSONObject
+import org.openbot.data.model.DeviceInfo
 import java.util.concurrent.TimeUnit
 
 // WebsocketProtocol 实现

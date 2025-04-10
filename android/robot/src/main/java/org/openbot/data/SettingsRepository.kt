@@ -1,7 +1,7 @@
-package info.dourok.voicebot.data
+package org.openbot.data
 
-import info.dourok.voicebot.data.model.MqttConfig
-import info.dourok.voicebot.data.model.TransportType
+import org.openbot.data.model.MqttConfig
+import org.openbot.data.model.TransportType
 import javax.inject.Inject
 import javax.inject.Singleton
 
