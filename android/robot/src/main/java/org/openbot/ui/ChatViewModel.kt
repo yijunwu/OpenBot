@@ -144,6 +144,8 @@ class ChatViewModel @Inject constructor(
                                         if (deviceState == DeviceState.IDLE || deviceState == DeviceState.LISTENING) {
                                             deviceState = DeviceState.SPEAKING
                                         }
+                                        delay(200)
+                                        player?.play()
                                     }
                                 }
 

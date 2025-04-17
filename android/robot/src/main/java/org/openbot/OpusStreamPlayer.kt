@@ -91,6 +91,18 @@ class OpusStreamPlayer(
         audioTrack.release()
     }
 
+    fun play() {
+        if (audioTrack.state == AudioTrack.STATE_INITIALIZED) {
+            audioTrack.play()
+        }
+    }
+
+    fun pause() {
+        if (audioTrack.state == AudioTrack.STATE_INITIALIZED) {
+            audioTrack.pause()
+        }
+    }
+
     suspend fun waitForPlaybackCompletion() {
         var position = 0
         while (audioTrack.playState == AudioTrack.PLAYSTATE_PLAYING && audioTrack.playbackHeadPosition != position) {
