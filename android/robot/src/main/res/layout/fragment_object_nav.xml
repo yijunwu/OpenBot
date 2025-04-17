@@ -304,6 +304,7 @@
                     android:textColor="@android:color/black" />
 
                 <LinearLayout
+                    android:id="@+id/linearLayout2"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
@@ -337,7 +338,13 @@
                         android:contentDescription="@string/plus"
                         android:src="@drawable/ic_baseline_add" />
                 </LinearLayout>
-
+                <!-- 在原有 LinearLayout 下方添加 -->
+                <include
+                    android:id="@+id/chatListContainer"
+                    layout="@layout/chat_list"
+                    android:layout_width="match_parent"
+                    android:layout_height="80dp"
+                    />
             </LinearLayout>
 
             <LinearLayout

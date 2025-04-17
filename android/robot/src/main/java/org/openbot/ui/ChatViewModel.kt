@@ -187,6 +187,12 @@ class ChatViewModel @Inject constructor(
                                     display.setEmotion(emotion)
                                 }
                             }
+                            val script = json.optString("script")
+                            if (emotion.isNotEmpty()) {
+                                schedule {
+                                    executeScript(script);
+                                }
+                            }
                         }
 
                         "iot" -> {
@@ -204,6 +210,10 @@ class ChatViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    private fun executeScript(script: String) {
+        TODO("Not yet implemented")
     }
 
     private fun initProtocol(

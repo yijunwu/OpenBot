@@ -1,5 +1,7 @@
 package org.openbot.objectNav;
 
+import static java.util.Collections.emptyList;
+
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -27,6 +29,7 @@ import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.Navigation;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
@@ -47,6 +50,9 @@ import org.openbot.utils.Enums;
 import org.openbot.utils.MovingAverage;
 import org.openbot.utils.PermissionUtils;
 import org.openbot.vehicle.Control;
+import androidx.lifecycle.Observer;
+import androidx.recyclerview.widget.RecyclerView;
+
 import timber.log.Timber;
 
 public class ObjectNavFragment extends CameraFragment {
@@ -110,6 +116,29 @@ public class ObjectNavFragment extends CameraFragment {
     } else {
       throw new UnsupportedOperationException();
     }
+
+    // 初始化 RecyclerView
+    RecyclerView chatRecyclerView = view.findViewById(R.id.chatListContainer);
+    // 通过容器获取 RecyclerView
+    //RecyclerView chatRecyclerView = chatContainer.findViewById(R.id.chatRecyclerView);
+    if (chatRecyclerView != null) {
+      ArrayList<String> messages = new ArrayList<>();
+      messages.add("用户: 跳个蜜蜂的8字舞吧");
+      messages.add("小车: 好的，我是一只小蜜蜂，我跳一个8字舞");
+      messages.add("message 3");
+      ChatAdapter adapter = new ChatAdapter(messages);
+      chatRecyclerView.setAdapter(adapter);
+    }
+
+    // 观察 ViewModel 数据变化
+//    chatViewModel.getMessages().observe(getViewLifecycleOwner(), new Observer<List<String>>() {
+//      @Override
+//      public void onChanged(List<String> messages) {
+//        adapter.setMessages(messages);
+//        adapter.notifyDataSetChanged();
+//      }
+//    });
+
     binding.confidenceValue.setText((int) (MINIMUM_CONFIDENCE_TF_OD_API * 100) + "%");
 
     binding.plusConfidence.setOnClickListener(
