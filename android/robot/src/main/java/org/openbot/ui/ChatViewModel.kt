@@ -3,6 +3,8 @@ package org.openbot.ui
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 //import androidx.lifecycle.ViewModel
 //import androidx.lifecycle.viewModelScope
 //import dagger.hilt.android.lifecycle.HiltViewModel
@@ -50,6 +52,9 @@ class ChatViewModel @Inject constructor(
     constructor() : this(null, null) {
 
     }
+
+    private val _messages = MutableLiveData<List<String>>()
+    val messages: LiveData<List<String>> = _messages
 
     private var protocol: Protocol? = null
 
@@ -164,6 +169,7 @@ class ChatViewModel @Inject constructor(
                                         Log.i(TAG, "<< $text")
                                         schedule {
                                             display.setChatMessage("assistant", text)
+                                            addMessage(text)
                                         }
                                     }
                                 }
@@ -210,6 +216,12 @@ class ChatViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    fun addMessage(newMessage: String) {
+        val currentList = _messages.value?.toMutableList() ?: mutableListOf()
+        currentList.add(newMessage)
+        _messages.postValue(currentList)  // 创建新列表（触发更新）
     }
 
     private fun executeScript(script: String) {

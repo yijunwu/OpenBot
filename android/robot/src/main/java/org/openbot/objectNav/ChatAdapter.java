@@ -1,47 +1,56 @@
 package org.openbot.objectNav;
+
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
-
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.DiffUtil;
+import androidx.recyclerview.widget.ListAdapter;
 import androidx.recyclerview.widget.RecyclerView;
 
 import org.openbot.R;
 
-import java.util.List;
+public class ChatAdapter extends ListAdapter<String, ChatAdapter.ViewHolder> {
 
-public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ViewHolder> {
-    private final List<String> messages;
-
-    public ChatAdapter(List<String> messages) {
-        this.messages = messages;
+    public ChatAdapter() {
+        super(DIFF_CALLBACK);
     }
 
+    // ViewHolder 类
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        public final TextView messageText;
+        final TextView textView;
 
         public ViewHolder(View view) {
             super(view);
-            messageText = view.findViewById(R.id.tvMessage);
+            textView = view.findViewById(R.id.tvMessage);
         }
     }
 
     @NonNull
     @Override
-    public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.item_chat_message, parent, false);
         return new ViewHolder(view);
     }
 
     @Override
-    public void onBindViewHolder(ViewHolder holder, int position) {
-        holder.messageText.setText(messages.get(position));
+    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+        String item = getItem(position);
+        holder.textView.setText(item);
     }
 
-    @Override
-    public int getItemCount() {
-        return messages.size();
-    }
+    // 定义 DiffCallback
+    private static final DiffUtil.ItemCallback<String> DIFF_CALLBACK = new DiffUtil.ItemCallback<String>() {
+        @Override
+        public boolean areItemsTheSame(@NonNull String oldItem, @NonNull String newItem) {
+            return oldItem.equals(newItem);
+        }
+
+        @Override
+        public boolean areContentsTheSame(@NonNull String oldItem, @NonNull String newItem) {
+            return oldItem.equals(newItem);
+        }
+    };
 }

@@ -126,8 +126,16 @@ public class ObjectNavFragment extends CameraFragment {
       messages.add("用户: 跳个蜜蜂的8字舞吧");
       messages.add("小车: 好的，我是一只小蜜蜂，我跳一个8字舞");
       messages.add("message 3");
-      ChatAdapter adapter = new ChatAdapter(messages);
+      ChatAdapter adapter = new ChatAdapter();
       chatRecyclerView.setAdapter(adapter);
+
+      chatViewModel.getMessages().observe(getViewLifecycleOwner(), list -> {
+                adapter.submitList(list, () -> {
+                  chatRecyclerView.post(() -> chatRecyclerView.scrollToPosition(adapter.getItemCount() - 1));
+                });
+              });
+
+      adapter.submitList(messages);
     }
 
     // 观察 ViewModel 数据变化
