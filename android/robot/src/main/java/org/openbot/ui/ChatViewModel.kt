@@ -51,7 +51,7 @@ class ChatViewModel @Inject constructor(
 
     }
 
-    private var protocol: Protocol = initProtocol(deviceInfo, settings)
+    private var protocol: Protocol? = null
 
     val display = Display()
     var encoder: OpusEncoder? = null
@@ -93,15 +93,15 @@ class ChatViewModel @Inject constructor(
             //FIXME start before checking the version
             protocol!!.start()
             deviceState = DeviceState.CONNECTING
-            if (protocol.openAudioChannel()) {
-                protocol.sendStartListening(ListeningMode.AUTO_STOP)
+            if (protocol!!.openAudioChannel()) {
+                protocol!!.sendStartListening(ListeningMode.AUTO_STOP)
                 launch(Dispatchers.IO) {
                     val sampleRate = 16000
                     val channels = 1
                     val frameSizeMs = 60
                     player = OpusStreamPlayer(sampleRate, channels, frameSizeMs)
                     decoder = OpusDecoder(sampleRate, channels, frameSizeMs)
-                    player?.start(protocol.incomingAudioFlow.map {
+                    player?.start(protocol!!.incomingAudioFlow.map {
                         deviceState = DeviceState.SPEAKING
                         decoder?.decode(it)
                     })
@@ -122,12 +122,12 @@ class ChatViewModel @Inject constructor(
                 val opusFlow = audioFlow?.map { encoder?.encode(it) }
                 deviceState = DeviceState.LISTENING
                 opusFlow?.collect {
-                    it?.let { protocol.sendAudio(it) }
+                    it?.let { protocol!!.sendAudio(it) }
                 }
             }
 
             launch {
-                protocol.incomingJsonFlow.collect { json ->
+                protocol!!.incomingJsonFlow.collect { json ->
                     val type = json.optString("type")
                     when (type) {
                         "tts" -> {
@@ -149,7 +149,7 @@ class ChatViewModel @Inject constructor(
                                             player?.waitForPlaybackCompletion()
                                             Log.i(TAG, "TTS stopped")
                                             if (keepListening) {
-                                                protocol.sendStartListening(ListeningMode.AUTO_STOP)
+                                                protocol!!.sendStartListening(ListeningMode.AUTO_STOP)
                                                 deviceState = DeviceState.LISTENING
                                             } else {
                                                 deviceState = DeviceState.IDLE
@@ -231,9 +231,9 @@ class ChatViewModel @Inject constructor(
                 }
 
                 DeviceState.IDLE -> {
-                    if (protocol.openAudioChannel()) {
+                    if (protocol!!.openAudioChannel()) {
                         keepListening = true
-                        protocol.sendStartListening(ListeningMode.AUTO_STOP)
+                        protocol!!.sendStartListening(ListeningMode.AUTO_STOP)
                         deviceState = DeviceState.LISTENING
                     } else {
                         deviceState = DeviceState.IDLE
@@ -245,7 +245,7 @@ class ChatViewModel @Inject constructor(
                 }
 
                 DeviceState.LISTENING -> {
-                    protocol.closeAudioChannel()
+                    protocol!!.closeAudioChannel()
                 }
 
                 else -> {
@@ -265,14 +265,14 @@ class ChatViewModel @Inject constructor(
 
             keepListening = false
             if (deviceState == DeviceState.IDLE) {
-                if (!protocol.isAudioChannelOpened()) {
+                if (!protocol!!.isAudioChannelOpened()) {
                     deviceState = DeviceState.CONNECTING
-                    if (!protocol.openAudioChannel()) {
+                    if (!protocol!!.openAudioChannel()) {
                         deviceState = DeviceState.IDLE
                         return@launch
                     }
                 }
-                protocol.sendStartListening(ListeningMode.MANUAL)
+                protocol!!.sendStartListening(ListeningMode.MANUAL)
                 deviceState = DeviceState.LISTENING
             } else if (deviceState == DeviceState.SPEAKING) {
                 abortSpeaking(AbortReason.NONE)
@@ -292,7 +292,7 @@ class ChatViewModel @Inject constructor(
         aborted = true
         //viewModelScope.launch {
         GlobalScope.launch {
-            protocol.sendAbortSpeaking(reason)
+            protocol!!.sendAbortSpeaking(reason)
         }
     }
     private fun schedule(task: suspend () -> Unit) {
@@ -307,14 +307,14 @@ class ChatViewModel @Inject constructor(
         //viewModelScope.launch {
         GlobalScope.launch {
             if (deviceState == DeviceState.LISTENING) {
-                protocol.sendStopListening()
+                protocol!!.sendStopListening()
                 deviceState = DeviceState.IDLE
             }
         }
     }
 
     override fun onCleared() {
-        protocol.dispose()
+        protocol!!.dispose()
         encoder?.release()
         decoder?.release()
         player?.stop()
