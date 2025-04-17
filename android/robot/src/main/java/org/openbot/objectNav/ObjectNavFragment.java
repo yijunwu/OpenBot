@@ -7,6 +7,7 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.graphics.Typeface;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -22,6 +23,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageProxy;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.Navigation;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import java.io.IOException;
@@ -38,6 +40,7 @@ import org.openbot.tflite.Detector;
 import org.openbot.tflite.Model;
 import org.openbot.tflite.Network;
 import org.openbot.tracking.MultiBoxTracker;
+import org.openbot.ui.ChatViewModel;
 import org.openbot.utils.CameraUtils;
 import org.openbot.utils.Constants;
 import org.openbot.utils.Enums;
@@ -75,6 +78,8 @@ public class ObjectNavFragment extends CameraFragment {
   private long lastProcessingTimeMs = -1;
   private long frameNum = 0;
 
+  private ChatViewModel chatViewModel;
+
   private final boolean isBenchmarkMode = false;
   private long processedFrames = 0;
   private final int movingAvgSize = 100;
@@ -98,6 +103,13 @@ public class ObjectNavFragment extends CameraFragment {
   public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
     super.onViewCreated(view, savedInstanceState);
 
+    // 初始化 ViewModel
+    chatViewModel = new ViewModelProvider(this).get(ChatViewModel.class);
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+      chatViewModel.initialize(null, null);  // 调用初始化逻辑
+    } else {
+      throw new UnsupportedOperationException();
+    }
     binding.confidenceValue.setText((int) (MINIMUM_CONFIDENCE_TF_OD_API * 100) + "%");
 
     binding.plusConfidence.setOnClickListener(

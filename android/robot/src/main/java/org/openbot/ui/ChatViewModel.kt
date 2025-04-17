@@ -1,56 +1,57 @@
-package info.dourok.voicebot.ui
+package org.openbot.ui
 
-import android.content.Context
+import android.os.Build
 import android.util.Log
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
-import info.dourok.voicebot.AudioRecorder
-import info.dourok.voicebot.NavigationEvents
-import info.dourok.voicebot.OpusDecoder
-import info.dourok.voicebot.OpusEncoder
-import info.dourok.voicebot.OpusStreamPlayer
-import info.dourok.voicebot.data.SettingsRepository
-import info.dourok.voicebot.data.model.DeviceInfo
-import info.dourok.voicebot.data.model.TransportType
-import info.dourok.voicebot.protocol.AbortReason
-import info.dourok.voicebot.protocol.ListeningMode
-import info.dourok.voicebot.protocol.MqttProtocol
-import info.dourok.voicebot.protocol.Protocol
-import info.dourok.voicebot.protocol.WebsocketProtocol
+import androidx.annotation.RequiresApi
+//import androidx.lifecycle.ViewModel
+//import androidx.lifecycle.viewModelScope
+//import dagger.hilt.android.lifecycle.HiltViewModel
+//import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.openbot.AudioRecorder
+import org.openbot.OpusDecoder
+import org.openbot.OpusEncoder
+import org.openbot.OpusStreamPlayer
+import org.openbot.data.SettingsRepository
+import org.openbot.data.model.DeviceInfo
+import org.openbot.data.model.TransportType
+import org.openbot.protocol.AbortReason
+import org.openbot.protocol.ListeningMode
+import org.openbot.protocol.Protocol
+import org.openbot.protocol.WebsocketProtocol
 import java.text.SimpleDateFormat
 import java.util.Locale
 import javax.inject.Inject
+import androidx.lifecycle.ViewModel
+import org.openbot.data.SettingsRepositoryImpl
+import org.openbot.data.model.Application
+import org.openbot.data.model.Board
+import org.openbot.data.model.ChipInfo
+import org.openbot.data.model.OTA
 
-@HiltViewModel
+//@HiltViewModel
+@RequiresApi(Build.VERSION_CODES.M)
 class ChatViewModel @Inject constructor(
-    @ApplicationContext private val context: Context,
-    @NavigationEvents private val navigationEvents: MutableSharedFlow<String>,
-    deviceInfo: DeviceInfo,
-    settings: SettingsRepository
+    //@ApplicationContext private val context: Context,
+    //@NavigationEvents private val navigationEvents: MutableSharedFlow<String>,
+    val deviceInfo: DeviceInfo?,
+    val settings: SettingsRepository?
 ) : ViewModel() {
     companion object {
         private const val TAG = "ChatViewModel"
     }
 
-    private val protocol: Protocol = when (settings.transportType) {
+    constructor() : this(null, null) {
 
-        TransportType.MQTT -> {
-            MqttProtocol(context, settings.mqttConfig!!)
-        }
-
-        TransportType.WebSockets -> {
-            WebsocketProtocol(deviceInfo, settings.webSocketUrl!!, "test-token")
-        }
     }
+
+    private var protocol: Protocol = initProtocol(deviceInfo, settings)
 
     val display = Display()
     var encoder: OpusEncoder? = null
@@ -66,28 +67,44 @@ class ChatViewModel @Inject constructor(
             deviceStateFlow.value = value
         }
 
-    init {
+    fun initialize(deviceInfo: DeviceInfo?, settings: SettingsRepository?) {
+        var deviceInfo2 = deviceInfo
+        var settings2 = settings
+        if (deviceInfo == null) {
+            deviceInfo2 = DeviceInfo(1, 2, 3, 4,
+                "", "", "",
+                ChipInfo(1, 2, 3, 5),
+                Application("", "", "", "", ""),
+                emptyList(), OTA(""), Board("", "", emptyList(), "", "")
+            )
+        }
+        if (settings == null) {
+            settings2 = SettingsRepositoryImpl().apply {
+                this.webSocketUrl = "ws://192.168.101.14:8091/ws/xiaozhi/v1/"
+            }
+        }
+
+        protocol = initProtocol(deviceInfo2, settings2)
 
         deviceState = DeviceState.STARTING
 
-        viewModelScope.launch {
+        //viewModelScope.launch {
+        GlobalScope.launch {
             //FIXME start before checking the version
-            protocol.start()
+            protocol!!.start()
             deviceState = DeviceState.CONNECTING
             if (protocol.openAudioChannel()) {
                 protocol.sendStartListening(ListeningMode.AUTO_STOP)
-                withContext(Dispatchers.IO) {
-                    launch {
-                        val sampleRate = 16000
-                        val channels = 1
-                        val frameSizeMs = 60
-                        player = OpusStreamPlayer(sampleRate, channels, frameSizeMs)
-                        decoder = OpusDecoder(sampleRate, channels, frameSizeMs)
-                        player?.start(protocol.incomingAudioFlow.map {
-                            deviceState = DeviceState.SPEAKING
-                            decoder?.decode(it)
-                        })
-                    }
+                launch(Dispatchers.IO) {
+                    val sampleRate = 16000
+                    val channels = 1
+                    val frameSizeMs = 60
+                    player = OpusStreamPlayer(sampleRate, channels, frameSizeMs)
+                    decoder = OpusDecoder(sampleRate, channels, frameSizeMs)
+                    player?.start(protocol.incomingAudioFlow.map {
+                        deviceState = DeviceState.SPEAKING
+                        decoder?.decode(it)
+                    })
                 }
             } else {
                 Log.e("WS", "Failed to open audio channel")
@@ -189,8 +206,25 @@ class ChatViewModel @Inject constructor(
         }
     }
 
+    private fun initProtocol(
+        deviceInfo: DeviceInfo?,
+        settings: SettingsRepository?
+    ) = when (settings?.transportType) {
+
+        TransportType.MQTT -> {
+                throw NotImplementedError()
+                //MqttProtocol(context, settings.mqttConfig!!)
+            }
+
+        TransportType.WebSockets -> {
+                WebsocketProtocol(deviceInfo!!, settings.webSocketUrl!!, "test-token")
+            }
+
+        else -> throw NotImplementedError()
+    }
+
     fun toggleChatState() {
-        viewModelScope.launch {
+        GlobalScope.launch {
             when (deviceState) {
                 DeviceState.ACTIVATING -> {
                     reboot()
@@ -222,7 +256,8 @@ class ChatViewModel @Inject constructor(
     }
 
     fun startListening() {
-        viewModelScope.launch {
+        //viewModelScope.launch {
+        GlobalScope.launch {
             if (deviceState == DeviceState.ACTIVATING) {
                 reboot()
                 return@launch
@@ -241,7 +276,7 @@ class ChatViewModel @Inject constructor(
                 deviceState = DeviceState.LISTENING
             } else if (deviceState == DeviceState.SPEAKING) {
                 abortSpeaking(AbortReason.NONE)
-                protocol.sendStartListening(ListeningMode.MANUAL)
+                protocol!!.sendStartListening(ListeningMode.MANUAL)
                 delay(120) // Wait for the speaker to empty the buffer
                 deviceState = DeviceState.LISTENING
             }
@@ -255,19 +290,22 @@ class ChatViewModel @Inject constructor(
     fun abortSpeaking(reason: AbortReason) {
         Log.i(TAG, "Abort speaking")
         aborted = true
-        viewModelScope.launch {
+        //viewModelScope.launch {
+        GlobalScope.launch {
             protocol.sendAbortSpeaking(reason)
         }
     }
     private fun schedule(task: suspend () -> Unit) {
-        viewModelScope.launch {
+        //viewModelScope.launch {
+        GlobalScope.launch {
             task()
         }
     }
 
 
     fun stopListening() {
-        viewModelScope.launch {
+        //viewModelScope.launch {
+        GlobalScope.launch {
             if (deviceState == DeviceState.LISTENING) {
                 protocol.sendStopListening()
                 deviceState = DeviceState.IDLE
@@ -281,7 +319,7 @@ class ChatViewModel @Inject constructor(
         decoder?.release()
         player?.stop()
         recorder?.stopRecording()
-        super.onCleared()
+        //super.onCleared()
     }
 }
 

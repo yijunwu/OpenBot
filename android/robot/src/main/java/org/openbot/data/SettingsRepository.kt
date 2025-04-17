@@ -13,7 +13,7 @@ interface SettingsRepository {
 
 @Singleton
 class SettingsRepositoryImpl @Inject constructor() : SettingsRepository {
-    override var transportType: TransportType = TransportType.MQTT
+    override var transportType: TransportType = TransportType.WebSockets
     override var mqttConfig: MqttConfig? = null
     override var webSocketUrl: String? = null
 }

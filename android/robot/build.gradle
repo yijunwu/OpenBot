@@ -29,6 +29,13 @@ android {
         ndk {
             abiFilters 'armeabi-v7a', 'arm64-v8a'
         }
+
+        externalNativeBuild {
+            cmake {
+                arguments += "-DANDROID_STL=c++_shared"
+                cppFlags  += "-std=c++17"
+            }
+        }
     }
     buildTypes {
         release {
@@ -58,6 +65,17 @@ android {
     namespace 'org.openbot'
     packagingOptions {
         resources.excludes.add("META-INF/*")
+    }
+
+    buildFeatures {
+        prefab = true
+    }
+
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/CMakeLists.txt")
+            version = "3.22.1"
+        }
     }
 }
 
@@ -93,6 +111,8 @@ dependencies {
     // RTSP server
     implementation 'com.github.pedroSG94:RTSP-Server:1.0.8'
     implementation 'com.github.pedroSG94.rtmp-rtsp-stream-client-java:rtplibrary:2.0.2'
+
+    implementation 'com.fpliu.ndk.pkg.prefab.android.21:opus:1.3.1'
 
     // RxJava
     implementation 'io.reactivex.rxjava3:rxjava:3.0.0'
