@@ -31,6 +31,7 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 import javax.inject.Inject
 import androidx.lifecycle.ViewModel
+import kotlinx.coroutines.async
 import org.openbot.data.SettingsRepositoryImpl
 import org.openbot.data.model.Application
 import org.openbot.data.model.Board
@@ -55,6 +56,9 @@ class ChatViewModel @Inject constructor(
 
     private val _messages = MutableLiveData<List<String>>()
     val messages: LiveData<List<String>> = _messages
+
+    private val _script = MutableLiveData<String>()
+    val script: LiveData<String> = _script
 
     private var protocol: Protocol? = null
 
@@ -195,10 +199,13 @@ class ChatViewModel @Inject constructor(
                                     display.setEmotion(emotion)
                                 }
                             }
-                            val script = json.optString("script")
-                            if (emotion.isNotEmpty()) {
-                                schedule {
-                                    executeScript(script);
+                            val state = json.optString("state")
+                            if ("end" == state) {
+                                val script = json.optString("text") //TODO wuyijun 待实现
+                                if (script.isNotEmpty()) {
+                                    withContext(Dispatchers.IO) {
+                                        launch { postScript(script) }
+                                    }
                                 }
                             }
                         }
@@ -226,8 +233,8 @@ class ChatViewModel @Inject constructor(
         _messages.postValue(currentList)  // 创建新列表（触发更新）
     }
 
-    private fun executeScript(script: String) {
-        TODO("Not yet implemented")
+    private fun postScript(script: String) {
+        _script.postValue(script)
     }
 
     private fun initProtocol(

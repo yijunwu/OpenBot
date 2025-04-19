@@ -1,7 +1,5 @@
 package org.openbot.objectNav;
 
-import static java.util.Collections.emptyList;
-
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -33,6 +31,11 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
 import org.jetbrains.annotations.NotNull;
 import org.openbot.R;
 import org.openbot.common.CameraFragment;
@@ -50,7 +53,8 @@ import org.openbot.utils.Enums;
 import org.openbot.utils.MovingAverage;
 import org.openbot.utils.PermissionUtils;
 import org.openbot.vehicle.Control;
-import androidx.lifecycle.Observer;
+import org.openbot.vehicle.ScriptExecutor;
+
 import androidx.recyclerview.widget.RecyclerView;
 
 import timber.log.Timber;
@@ -86,6 +90,8 @@ public class ObjectNavFragment extends CameraFragment {
 
   private ChatViewModel chatViewModel;
 
+  private ScriptExecutor scriptExecutor;
+
   private final boolean isBenchmarkMode = false;
   private long processedFrames = 0;
   private final int movingAvgSize = 100;
@@ -117,10 +123,12 @@ public class ObjectNavFragment extends CameraFragment {
       throw new UnsupportedOperationException();
     }
 
+    scriptExecutor= new ScriptExecutor(vehicle);
+
     // 初始化 RecyclerView
-    RecyclerView chatRecyclerView = view.findViewById(R.id.chatListContainer);
+    View chatContainer = view.findViewById(R.id.chatListContainer);
     // 通过容器获取 RecyclerView
-    //RecyclerView chatRecyclerView = chatContainer.findViewById(R.id.chatRecyclerView);
+    RecyclerView chatRecyclerView = chatContainer.findViewById(R.id.chatRecyclerView);
     if (chatRecyclerView != null) {
       ArrayList<String> messages = new ArrayList<>();
       messages.add("用户: 跳个蜜蜂的8字舞吧");
@@ -136,6 +144,15 @@ public class ObjectNavFragment extends CameraFragment {
               });
 
       adapter.submitList(messages);
+
+      chatViewModel.getScript().observe(getViewLifecycleOwner(), script -> {
+        List<String> currentList = adapter.getCurrentList();
+        List<String> newList = new ArrayList<>(currentList);
+        newList.add(script);
+        adapter.submitList(newList);
+        executeScript(script);
+      });
+
     }
 
     // 观察 ViewModel 数据变化
@@ -285,7 +302,22 @@ public class ObjectNavFragment extends CameraFragment {
         });
   }
 
+  private void executeScript(String script) {
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+          CompletableFuture<Void> future = scriptExecutor.executeScriptAsync(script);
+          try {
+              future.get(100, TimeUnit.SECONDS);
+          } catch (Exception e) {
+              Timber.e(e,"Exception encountered when executing script %s", script);
+          }
+      }
+  }
+
   private void mirrorControl() {
+    executeScript("rotate(360, 0.2, clock-wise, forward, 0.2)");
+    executeScript("rotate(360, 0.2, counter-clockwise, forward, 0.2)");
+    executeScript("rotate(360, 0.2, clock-wise, backward, 0.2)");
+    executeScript("rotate(360, 0.2, counter-clockwise, backward, 0.2)");
     mirrorControl = !mirrorControl;
   }
 
