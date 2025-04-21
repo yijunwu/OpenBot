@@ -15,6 +15,8 @@ import kotlin.math.min
 import kotlin.math.roundToLong
 import kotlinx.coroutines.future.future
 import java.util.concurrent.Executors
+import kotlin.math.abs
+import kotlin.math.max
 
 
 class ScriptExecutor(val vehicle: Vehicle) {
@@ -153,7 +155,9 @@ class ScriptExecutor(val vehicle: Vehicle) {
 
 // 假设存在的机器人操作方法
 internal object Robot {
-    val factor: Double = 1.8
+    val rightFactor: Double = 1.66
+    val leftFactor: Double = 1.05 * rightFactor
+    val backwardFactor: Double = 1.1
     /**
      * angle: 单位度
      * radius: 单位米
@@ -173,38 +177,58 @@ internal object Robot {
         val temp1 = if ("counterclockwise" == normalizedRotateDirection) 1 else -1
         val temp2 = if ("forward" == headDirection) 1 else -1
         //val t: Long = (((radius + width / 2) * PI * angle / 180 / (speed * factor)) * 1000.00).roundToLong()
-        val t: Long = (angle / speed * 1000.00).roundToLong()
+
+        //val t: Long = (angle / speed * 1000.00).roundToLong()
         val adjustedWidth = width * (temp1 * temp2)
-        //val leftSpeed: Double = speed * factor * (radius - adjustedWidth / 2)
-        val leftSpeed: Double = speed / 180.0 * PI * (radius - adjustedWidth / 2)
-        //val rightSpeed: Double = speed * (radius + adjustedWidth / 2)
-        val rightSpeed: Double = speed * factor / 180.0 * PI * (radius + adjustedWidth / 2)
-        val actualLeft = (leftSpeed * factor * temp2).toFloat()
-        val actualRight = (rightSpeed * factor * temp2).toFloat()
-        vehicle.setControl(actualLeft, actualRight)
-        delay(t + 500)
+
+        var leftSpeed: Double = speed / 180.0 * PI * (radius - adjustedWidth / 2)
+        var rightSpeed: Double = speed / 180.0 * PI * (radius + adjustedWidth / 2)
+
+        val maxSpeed = 0.9
+        val controlValueForMaxSpeed = 1.4
+        val actualLeft: Double
+        val actualRight: Double
+        val t: Long
+        // 如果速度超出最大速度，则等比例调整左右轮速度（保持半径不变），同时延长动作时间
+        if (max(abs(leftSpeed), abs(rightSpeed)) > maxSpeed) {
+            actualLeft = leftSpeed / max(abs(leftSpeed), abs(rightSpeed)) * controlValueForMaxSpeed
+            actualRight = rightSpeed / max(abs(leftSpeed), abs(rightSpeed)) * controlValueForMaxSpeed
+            t = ((angle / speed) * (max(abs(leftSpeed), abs(rightSpeed)) / maxSpeed) * 1000).toLong()
+        } else {
+            actualLeft = leftSpeed / maxSpeed * controlValueForMaxSpeed
+            actualRight = rightSpeed / maxSpeed * controlValueForMaxSpeed
+            t = (angle / speed * 1000).toLong()
+        }
+        vehicle.setControl(actualLeft.toFloat() * temp2, actualRight.toFloat() * temp2)
+        delay(t)
+        //delay(t + 100)
         vehicle.setControl(0.0F, 0.0F)
         Log.i("ScriptExecutor",
             "执行旋转：角度=$angle° 半径=${radius}m 转动方向=$rotateDirection 车头朝向=$headDirection 速度=${speed}d/s",
         )
         Log.i("ScriptExecutor",
-            "执行旋转：左轮速度=$actualLeft, 右轮速度=$actualRight, 持续时间=${t}ms",
+            "执行旋转：左轮速度=${actualLeft * temp1 * temp2}, 右轮速度=${actualRight * temp1 * temp2}, 持续时间=${t}ms",
         )
     }
 
     suspend fun straight(vehicle: Vehicle, distance: Double, headDirection: String?, speed: Double) {
-        val t: Long = ((distance / speed) * 1000.0).roundToLong()
         val sign = if ("backward".equals(headDirection, ignoreCase = true)) -1 else 1
-        val actualSpeed = (speed * factor * sign).toFloat()
-        vehicle.setControl(actualSpeed, actualSpeed)
-        delay(t + 500)
+
+        val maxSpeedInMetersPerSec = 0.9 // 当传255给到单片机时车子能达到的速度，米/秒
+        val controlValueForMaxSpeed = 1.5
+        val actualSpeed: Float = min(speed, maxSpeedInMetersPerSec).toFloat()
+        val t: Long = ((distance / actualSpeed) * 1000.0).roundToLong()
+
+        val actual = (actualSpeed / maxSpeedInMetersPerSec * controlValueForMaxSpeed).toFloat()
+        vehicle.setControl(actual * sign, actual * sign)
+        delay(t)
         vehicle.setControl(0.0F, 0.0F)
 
         Log.i("ScriptExecutor",
             "执行直行：距离=${distance}m 方向=$headDirection 速度=${speed}m/s"
         )
         Log.i("ScriptExecutor",
-            "执行直行：左轮速度=$actualSpeed, 右轮速度=$actualSpeed, 持续时间=${t}ms",
+            "执行直行：左轮速度=${actual * sign}, 右轮速度=${actual * sign}, 持续时间=${t}ms",
         )
     }
 }
