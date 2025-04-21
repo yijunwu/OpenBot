@@ -343,7 +343,7 @@
                     android:id="@+id/chatListContainer"
                     layout="@layout/chat_list"
                     android:layout_width="match_parent"
-                    android:layout_height="80dp"
+                    android:layout_height="180dp"
                     />
             </LinearLayout>
 
@@ -357,7 +357,8 @@
         </LinearLayout>
         <include
             android:id="@+id/controllerContainer"
-            layout="@layout/control_buttons" />
+            layout="@layout/control_buttons"
+            android:visibility="gone" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
