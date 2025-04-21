@@ -136,6 +136,12 @@ class ScriptExecutor(val vehicle: Vehicle) {
                     args[1],
                     args[2].replace("m/s", "").toDouble()
                 )
+            } else if (cmd.startsWith("delay")) {
+                val m = Pattern.compile("delay[ ]*$paramList").matcher(cmd)
+                m.find()
+                val args = m.group(1).split(",\\s*".toRegex()).dropLastWhile { it.isEmpty() }
+                    .toTypedArray()
+                delay(args[0].replace("ms", "").trim().toLong())
             }
         } catch (e: Exception) {
             System.err.println("执行命令失败: $cmd $e")
@@ -147,6 +153,7 @@ class ScriptExecutor(val vehicle: Vehicle) {
 
 // 假设存在的机器人操作方法
 internal object Robot {
+    val factor: Double = 1.8
     /**
      * angle: 单位度
      * radius: 单位米
@@ -161,8 +168,7 @@ internal object Robot {
         //(radius + 车宽/2) * pi * angle / 180 = speed * t
         //(leftSpeed + rightSpeed) / 2 = speed
         //rightSpeed / leftSpeed = (radius + 1/2 车宽) / (radius + 1/2 车宽)
-        val factor: Double = 1.4
-        val width: Double = 0.2
+        val width: Double = 0.13
         val normalizedRotateDirection = rotateDirection?.replace("-", "")?.lowercase()
         val temp1 = if ("counterclockwise" == normalizedRotateDirection) 1 else -1
         val temp2 = if ("forward" == headDirection) 1 else -1
@@ -170,13 +176,13 @@ internal object Robot {
         val t: Long = (angle / speed * 1000.00).roundToLong()
         val adjustedWidth = width * (temp1 * temp2)
         //val leftSpeed: Double = speed * factor * (radius - adjustedWidth / 2)
-        val leftSpeed: Double = speed * factor / 180 * PI * (radius - adjustedWidth / 2)
-        //val rightSpeed: Double = speed * factor * (radius + adjustedWidth / 2)
-        val rightSpeed: Double = speed * factor / 180 * PI * (radius + adjustedWidth / 2)
-        val actualLeft = (leftSpeed * temp2).toFloat()
-        val actualRight = (rightSpeed * temp2).toFloat()
+        val leftSpeed: Double = speed / 180.0 * PI * (radius - adjustedWidth / 2)
+        //val rightSpeed: Double = speed * (radius + adjustedWidth / 2)
+        val rightSpeed: Double = speed * factor / 180.0 * PI * (radius + adjustedWidth / 2)
+        val actualLeft = (leftSpeed * factor * temp2).toFloat()
+        val actualRight = (rightSpeed * factor * temp2).toFloat()
         vehicle.setControl(actualLeft, actualRight)
-        delay(t)
+        delay(t + 500)
         vehicle.setControl(0.0F, 0.0F)
         Log.i("ScriptExecutor",
             "执行旋转：角度=$angle° 半径=${radius}m 转动方向=$rotateDirection 车头朝向=$headDirection 速度=${speed}d/s",
@@ -189,10 +195,9 @@ internal object Robot {
     suspend fun straight(vehicle: Vehicle, distance: Double, headDirection: String?, speed: Double) {
         val t: Long = ((distance / speed) * 1000.0).roundToLong()
         val sign = if ("backward".equals(headDirection, ignoreCase = true)) -1 else 1
-        val factor: Double = 1.4
         val actualSpeed = (speed * factor * sign).toFloat()
         vehicle.setControl(actualSpeed, actualSpeed)
-        delay(t)
+        delay(t + 500)
         vehicle.setControl(0.0F, 0.0F)
 
         Log.i("ScriptExecutor",
