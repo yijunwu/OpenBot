@@ -174,32 +174,35 @@ internal object Robot {
         //rightSpeed / leftSpeed = (radius + 1/2 车宽) / (radius + 1/2 车宽)
         val width: Double = 0.13
         val normalizedRotateDirection = rotateDirection?.replace("-", "")?.lowercase()
-        val temp1 = if ("counterclockwise" == normalizedRotateDirection) 1 else -1
-        val temp2 = if ("forward" == headDirection) 1 else -1
+        val sign1 = if ("counterclockwise" == normalizedRotateDirection) 1 else -1
+        val sign2 = if ("forward" == headDirection) 1 else -1
         //val t: Long = (((radius + width / 2) * PI * angle / 180 / (speed * factor)) * 1000.00).roundToLong()
 
         //val t: Long = (angle / speed * 1000.00).roundToLong()
-        val adjustedWidth = width * (temp1 * temp2)
+        val adjustedWidth = width * (sign1 * sign2)
 
         var leftSpeed: Double = speed / 180.0 * PI * (radius - adjustedWidth / 2)
         var rightSpeed: Double = speed / 180.0 * PI * (radius + adjustedWidth / 2)
 
-        val maxSpeed = 0.9
+        val maxSpeed = 1.11
         val controlValueForMaxSpeed = 1.4
         val actualLeft: Double
         val actualRight: Double
         val t: Long
         // 如果速度超出最大速度，则等比例调整左右轮速度（保持半径不变），同时延长动作时间
         if (max(abs(leftSpeed), abs(rightSpeed)) > maxSpeed) {
-            actualLeft = leftSpeed / max(abs(leftSpeed), abs(rightSpeed)) * controlValueForMaxSpeed
-            actualRight = rightSpeed / max(abs(leftSpeed), abs(rightSpeed)) * controlValueForMaxSpeed
+            actualLeft = leftSpeed / max(abs(leftSpeed), abs(rightSpeed)) * maxSpeed
+            actualRight = rightSpeed / max(abs(leftSpeed), abs(rightSpeed)) * maxSpeed
             t = ((angle / speed) * (max(abs(leftSpeed), abs(rightSpeed)) / maxSpeed) * 1000).toLong()
         } else {
-            actualLeft = leftSpeed / maxSpeed * controlValueForMaxSpeed
-            actualRight = rightSpeed / maxSpeed * controlValueForMaxSpeed
+            actualLeft = leftSpeed
+            actualRight = rightSpeed
             t = (angle / speed * 1000).toLong()
         }
-        vehicle.setControl(actualLeft.toFloat() * temp2, actualRight.toFloat() * temp2)
+        val leftSpeedAndControl = speedToControl(actualLeft)
+        val rightSpeedAndControl = speedToControl(actualRight)
+
+        vehicle.setControl(leftSpeedAndControl.second * sign2, rightSpeedAndControl.second * sign2)
         delay(t)
         //delay(t + 100)
         vehicle.setControl(0.0F, 0.0F)
@@ -207,19 +210,15 @@ internal object Robot {
             "执行旋转：角度=$angle° 半径=${radius}m 转动方向=$rotateDirection 车头朝向=$headDirection 速度=${speed}d/s",
         )
         Log.i("ScriptExecutor",
-            "执行旋转：左轮速度=${actualLeft * temp1 * temp2}, 右轮速度=${actualRight * temp1 * temp2}, 持续时间=${t}ms",
+            "执行旋转：左轮速度=${actualLeft * sign2}, 右轮速度=${actualRight * sign2}, 持续时间=${t}ms",
         )
     }
 
     suspend fun straight(vehicle: Vehicle, distance: Double, headDirection: String?, speed: Double) {
         val sign = if ("backward".equals(headDirection, ignoreCase = true)) -1 else 1
 
-        val maxSpeedInMetersPerSec = 0.9 // 当传255给到单片机时车子能达到的速度，米/秒
-        val controlValueForMaxSpeed = 1.5
-        val actualSpeed: Float = min(speed, maxSpeedInMetersPerSec).toFloat()
+        val (actualSpeed: Float, actual) = speedToControl(speed)
         val t: Long = ((distance / actualSpeed) * 1000.0).roundToLong()
-
-        val actual = (actualSpeed / maxSpeedInMetersPerSec * controlValueForMaxSpeed).toFloat()
         vehicle.setControl(actual * sign, actual * sign)
         delay(t)
         vehicle.setControl(0.0F, 0.0F)
@@ -230,6 +229,18 @@ internal object Robot {
         Log.i("ScriptExecutor",
             "执行直行：左轮速度=${actual * sign}, 右轮速度=${actual * sign}, 持续时间=${t}ms",
         )
+    }
+
+    private fun speedToControl(speed: Double): Pair<Float, Float> {
+        val maxSpeedInMetersPerSec = 1.11 // 当传255给到单片机时车子能达到的速度，米/秒
+        val controlValueForMaxSpeed = 1.0
+        val controlValueForZeroSpeed = 0.2
+        val range = controlValueForMaxSpeed - controlValueForZeroSpeed
+        val actualSpeed: Float = min(speed, maxSpeedInMetersPerSec).toFloat()
+
+        val actual =
+            (actualSpeed / maxSpeedInMetersPerSec * range + controlValueForZeroSpeed).toFloat()
+        return Pair(actualSpeed, actual)
     }
 }
 
