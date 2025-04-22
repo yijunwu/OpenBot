@@ -17,6 +17,7 @@ import kotlinx.coroutines.future.future
 import java.util.concurrent.Executors
 import kotlin.math.abs
 import kotlin.math.max
+import kotlin.math.sign
 
 
 class ScriptExecutor(val vehicle: Vehicle) {
@@ -172,7 +173,7 @@ internal object Robot {
         //(radius + 车宽/2) * pi * angle / 180 = speed * t
         //(leftSpeed + rightSpeed) / 2 = speed
         //rightSpeed / leftSpeed = (radius + 1/2 车宽) / (radius + 1/2 车宽)
-        val width: Double = 0.13
+        val width: Double = 0.13 //左右轮中心距
         val normalizedRotateDirection = rotateDirection?.replace("-", "")?.lowercase()
         val sign1 = if ("counterclockwise" == normalizedRotateDirection) 1 else -1
         val sign2 = if ("forward" == headDirection) 1 else -1
@@ -232,15 +233,16 @@ internal object Robot {
     }
 
     private fun speedToControl(speed: Double): Pair<Float, Float> {
+        val speedAbs = if (speed < 0) -speed else speed
         val maxSpeedInMetersPerSec = 1.11 // 当传255给到单片机时车子能达到的速度，米/秒
         val controlValueForMaxSpeed = 1.0
         val controlValueForZeroSpeed = 0.2
         val range = controlValueForMaxSpeed - controlValueForZeroSpeed
-        val actualSpeed: Float = min(speed, maxSpeedInMetersPerSec).toFloat()
+        val actualSpeed: Float = min(speedAbs, maxSpeedInMetersPerSec).toFloat()
 
         val actual =
             (actualSpeed / maxSpeedInMetersPerSec * range + controlValueForZeroSpeed).toFloat()
-        return Pair(actualSpeed, actual)
+        return Pair(actualSpeed * sign(speed).toFloat(), actual * sign(speed).toFloat())
     }
 }
 
