@@ -16,11 +16,8 @@ import kotlin.math.roundToLong
 import kotlinx.coroutines.future.future
 import java.util.concurrent.Executors
 import kotlin.math.abs
-import kotlin.math.atan
-import kotlin.math.cos
 import kotlin.math.max
 import kotlin.math.sign
-import kotlin.math.sqrt
 
 
 class ScriptExecutor(val vehicle: Vehicle) {
@@ -176,24 +173,17 @@ internal object Robot {
         //(radius + 车宽/2) * pi * angle / 180 = speed * t
         //(leftSpeed + rightSpeed) / 2 = speed
         //rightSpeed / leftSpeed = (radius + 1/2 车宽) / (radius + 1/2 车宽)
-        val width: Double = 0.128 //左右轮中心距
-        val length: Double = 0.117 //前后轮中心距
+        val width: Double = 0.13 //左右轮中心距
         val normalizedRotateDirection = rotateDirection?.replace("-", "")?.lowercase()
-        val sign1 = if ("clockwise" == normalizedRotateDirection) 1 else -1
+        val sign1 = if ("counterclockwise" == normalizedRotateDirection) 1 else -1
         val sign2 = if ("forward" == headDirection) 1 else -1
         //val t: Long = (((radius + width / 2) * PI * angle / 180 / (speed * factor)) * 1000.00).roundToLong()
 
         //val t: Long = (angle / speed * 1000.00).roundToLong()
         val adjustedWidth = width * (sign1 * sign2)
 
-        var leftSpeed: Double = speed / 180.0 * PI * sqrt((length/2) * (length/2) + (radius + adjustedWidth / 2) * (radius - adjustedWidth / 2))
-        var rightSpeed: Double = speed / 180.0 * PI * sqrt((length/2) * (length/2) + (radius - adjustedWidth / 2) * (radius + adjustedWidth / 2))
-        var theta1 = atan(length / 2 / (radius - adjustedWidth / 2))
-        var theta2 = atan(length / 2 / (radius + adjustedWidth / 2))
-        leftSpeed = leftSpeed / cos(theta1) * sign(theta1)
-
-
-        rightSpeed = rightSpeed / cos(theta2) * sign(theta2)
+        var leftSpeed: Double = speed / 180.0 * PI * (radius - adjustedWidth / 2)
+        var rightSpeed: Double = speed / 180.0 * PI * (radius + adjustedWidth / 2)
 
         val maxSpeed = 1.11
         val controlValueForMaxSpeed = 1.4
