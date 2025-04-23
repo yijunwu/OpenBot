@@ -207,6 +207,7 @@ internal object Robot {
         delay(t)
         //delay(t + 100)
         vehicle.setControl(0.0F, 0.0F)
+        vehicle.setControl(0.0F, 0.0F)
         Log.i("ScriptExecutor",
             "执行旋转：角度=$angle° 半径=${radius}m 转动方向=$rotateDirection 车头朝向=$headDirection 速度=${speed}d/s",
         )
@@ -222,6 +223,7 @@ internal object Robot {
         val t: Long = ((distance / actualSpeed) * 1000.0).roundToLong()
         vehicle.setControl(actual * sign, actual * sign)
         delay(t)
+        vehicle.setControl(0.0F, 0.0F)
         vehicle.setControl(0.0F, 0.0F)
 
         Log.i("ScriptExecutor",
