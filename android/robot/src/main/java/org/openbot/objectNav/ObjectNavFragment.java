@@ -313,13 +313,72 @@ public class ObjectNavFragment extends CameraFragment {
       }
   }
 
-  private void mirrorControl() {
-    executeScript("rotate(360, 0.2, clock-wise, forward, 0.2)");
-    executeScript("rotate(360, 0.2, counter-clockwise, forward, 0.2)");
-    executeScript("rotate(360, 0.2, clock-wise, backward, 0.2)");
-    executeScript("rotate(360, 0.2, counter-clockwise, backward, 0.2)");
+  Integer time = 0;
+
+  private void mirrorControl2() {
+    //executeScript("rotate(360, 0.2, clock-wise, forward, 0.2)");
+    //executeScript("rotate(360, 0.2, counter-clockwise, forward, 0.2)");
+    //executeScript("rotate(360, 0.2, clock-wise, backward, 0.2)");
+    //executeScript("rotate(360, 0.2, counter-clockwise, backward, 0.2)");
+    time ++;
+    // 初始化 RecyclerView
+    View chatContainer = this.getView().findViewById(R.id.chatListContainer);
+    // 通过容器获取 RecyclerView
+    RecyclerView chatRecyclerView = chatContainer.findViewById(R.id.chatRecyclerView);
+    if (chatRecyclerView != null) {
+      ArrayList<String> messages = new ArrayList<>();
+      messages.add("Current control: " + time * 0.1 + ", lasting 3000ms");
+      ChatAdapter adapter = (ChatAdapter) chatRecyclerView.getAdapter();
+      adapter.submitList(messages);
+    }
+    try {
+      Thread.sleep(3000);
+      vehicle.setControl((float)(time * 0.1), (float)(time * 0.1));
+      Thread.sleep(3000);
+      vehicle.setControl(0.0F, 0.0F);
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+
     mirrorControl = !mirrorControl;
   }
+  private void mirrorControl() {
+        //executeScript("rotate(360, 0.2, clock-wise, forward, 0.2)");
+        //executeScript("rotate(360, 0.2, counter-clockwise, forward, 0.2)");
+        //executeScript("rotate(360, 0.2, clock-wise, backward, 0.2)");
+        //executeScript("rotate(360, 0.2, counter-clockwise, backward, 0.2)");
+
+        // 初始化 RecyclerView
+        View chatContainer = this.getView().findViewById(R.id.chatListContainer);
+        // 通过容器获取 RecyclerView
+        RecyclerView chatRecyclerView = chatContainer.findViewById(R.id.chatRecyclerView);
+        if (chatRecyclerView != null) {
+            ArrayList<String> messages = new ArrayList<>();
+            Integer speed = 180;
+            if (binding.dynamicSpeed.isChecked())
+                speed = 360;
+            String cmd;
+            if (time == 0)
+                cmd = "rotate(360, 0.215, clock-wise, forward, 180)";
+            else if (time == 1)
+                cmd = "rotate(360, 0.075, clock-wise, forward, 360)";
+            else
+                cmd = "rotate(360, " + 0.1 / 4 * time + ", clock-wise, forward, " + speed + ")";
+            messages.add(cmd);
+            ChatAdapter adapter = (ChatAdapter) chatRecyclerView.getAdapter();
+            adapter.submitList(messages);
+            try {
+                Thread.sleep(2000);
+                executeScript(cmd);
+                //Thread.sleep(1000);
+                //vehicle.setControl(0.0F, 0.0F);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        time ++;
+        mirrorControl = !mirrorControl;
+    }
 
   private void updateCropImageInfo() {
     //    Timber.i("%s x %s",getPreviewSize().getWidth(), getPreviewSize().getHeight());

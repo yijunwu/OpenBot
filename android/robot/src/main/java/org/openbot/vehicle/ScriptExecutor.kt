@@ -16,6 +16,8 @@ import kotlin.math.roundToLong
 import kotlinx.coroutines.future.future
 import java.util.concurrent.Executors
 import kotlin.math.abs
+import kotlin.math.atan
+import kotlin.math.cos
 import kotlin.math.max
 import kotlin.math.pow
 import kotlin.math.sign
@@ -175,16 +177,23 @@ internal object Robot {
         //(leftSpeed + rightSpeed) / 2 = speed
         //rightSpeed / leftSpeed = (radius + 1/2 车宽) / (radius + 1/2 车宽)
         val width: Double = 0.13 //左右轮中心距
+        val length: Double = 0.117 //前后轮中心距
         val normalizedRotateDirection = rotateDirection?.replace("-", "")?.lowercase()
-        val sign1 = if ("counterclockwise" == normalizedRotateDirection) 1 else -1
+        val sign1 = if ("clockwise" == normalizedRotateDirection) 1 else -1
         val sign2 = if ("forward" == headDirection) 1 else -1
         //val t: Long = (((radius + width / 2) * PI * angle / 180 / (speed * factor)) * 1000.00).roundToLong()
 
         //val t: Long = (angle / speed * 1000.00).roundToLong()
-        val adjustedWidth = width * (sign1 * sign2)
+        val adjustedWidth = width //* (sign1 * sign2)
 
-        var leftSpeed: Double = speed / 180.0 * PI * (radius - adjustedWidth / 2)
-        var rightSpeed: Double = speed / 180.0 * PI * (radius + adjustedWidth / 2)
+        var leftSpeed: Double = speed / 180.0 * PI * (sign1 * radius + adjustedWidth / 2) * sign1
+        var rightSpeed: Double = speed / 180.0 * PI * (sign1 * radius - adjustedWidth / 2) * sign1
+
+        var theta1 = atan(length / 2 / (sign1 * radius + adjustedWidth / 2))
+        var theta2 = atan(length / 2 / (sign1 * radius - adjustedWidth / 2))
+
+        leftSpeed = leftSpeed / cos(theta1) / cos(theta1) // * sign(theta2)
+        rightSpeed = 0.0 //rightSpeed * cos(theta2) * cos(theta2)
 
         val maxSpeed = 1.11
         val controlValueForMaxSpeed = 1.4
@@ -203,13 +212,13 @@ internal object Robot {
         }
         //低速负载补偿
         val diffRatio = (actualRight - actualLeft).pow(2) / (actualRight.pow(2) + actualLeft.pow(2)) / 2
-        actualLeft = compensate4(actualLeft, diffRatio)
-        actualRight = compensate4(actualRight, diffRatio)
+        actualLeft = compensate3(actualLeft, diffRatio)
+        actualRight = compensate3(actualRight, diffRatio)
         val leftSpeedAndControl = speedToControl(actualLeft)
         val rightSpeedAndControl = speedToControl(actualRight)
 
         vehicle.setControl(leftSpeedAndControl.second * sign2, rightSpeedAndControl.second * sign2)
-        delay(t)
+        delay(if (speed > 2000) 4000 else t)
         //delay(t + 100)
         vehicle.setControl(0.0F, 0.0F)
         Log.i("ScriptExecutor",
@@ -246,11 +255,10 @@ internal object Robot {
 
     private fun compensate3(speed: Double, diffRatio: Double): Double {
         val maxSpeed = 1.11
-        val diffSignificance = 1
-        val p: Double = 1.5
+        val p: Double = 5.0 // prev 2.5, 2.8, 4.0
 
         val s1 = maxSpeed * (abs(speed) / maxSpeed).pow(1/p) * sign(speed)
-        val s2 = s1 * (1 + diffRatio * diffSignificance) // / (diffSignificance + 1)
+        val s2 = s1 * (1) // / (diffSignificance + 1)
         return s2
     }
 
@@ -267,7 +275,7 @@ internal object Robot {
     suspend fun straight(vehicle: Vehicle, distance: Double, headDirection: String?, speed: Double) {
         val sign = if ("backward".equals(headDirection, ignoreCase = true)) -1 else 1
 
-        val (actualSpeed: Float, actual) = speedToControl(compensate(speed, 0.0))
+        val (actualSpeed: Float, actual) = speedToControl(compensate3(speed, 0.0))
         val t: Long = ((distance / actualSpeed) * 1000.0).roundToLong()
         vehicle.setControl(actual * sign, actual * sign)
         delay(t)
