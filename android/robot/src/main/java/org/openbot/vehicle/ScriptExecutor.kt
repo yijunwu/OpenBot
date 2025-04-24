@@ -17,6 +17,7 @@ import kotlinx.coroutines.future.future
 import java.util.concurrent.Executors
 import kotlin.math.abs
 import kotlin.math.max
+import kotlin.math.pow
 import kotlin.math.sign
 
 
@@ -187,8 +188,8 @@ internal object Robot {
 
         val maxSpeed = 1.11
         val controlValueForMaxSpeed = 1.4
-        val actualLeft: Double
-        val actualRight: Double
+        var actualLeft: Double
+        var actualRight: Double
         val t: Long
         // 如果速度超出最大速度，则等比例调整左右轮速度（保持半径不变），同时延长动作时间
         if (max(abs(leftSpeed), abs(rightSpeed)) > maxSpeed) {
@@ -200,6 +201,10 @@ internal object Robot {
             actualRight = rightSpeed
             t = (angle / speed * 1000).toLong()
         }
+        //低速负载补偿
+        val diffRatio = (actualRight - actualLeft).pow(2) / (actualRight.pow(2) + actualLeft.pow(2)) / 2
+        actualLeft = compensate4(actualLeft, diffRatio)
+        actualRight = compensate4(actualRight, diffRatio)
         val leftSpeedAndControl = speedToControl(actualLeft)
         val rightSpeedAndControl = speedToControl(actualRight)
 
@@ -215,10 +220,54 @@ internal object Robot {
         )
     }
 
+    /**
+     * diffRatio: 0 到 2
+     */
+    private fun compensate2(speed: Double, diffRatio: Double): Double {
+        val absSpeed = abs(speed)
+        val diffSignificance = 0
+        val slowSignicicance = 1
+        return when {
+            // TODO wuyijun 简单实现，待优化（插值）
+            absSpeed < 0.1 -> ((5.0 - 1).pow(2) * slowSignicicance / 4 / (diffSignificance + 1) + 1) * speed
+            absSpeed < 0.2 -> ((3.5 - 1) * slowSignicicance / 4 / (diffSignificance + 1) + 1) * speed
+            absSpeed < 0.3 -> ((2.2 - 1) * slowSignicicance / 4 / (diffSignificance + 1) + 1) * speed
+            absSpeed < 0.4 -> ((1.9 - 1) * slowSignicicance / 4 / (diffSignificance + 1) + 1) * speed
+            absSpeed < 0.5 -> ((1.7 - 1) * slowSignicicance / 4 / (diffSignificance + 1) + 1) * speed
+            absSpeed < 0.6 -> ((1.5 - 1) * slowSignicicance / 4 / (diffSignificance + 1) + 1) * speed
+            absSpeed < 0.7 -> ((1.4 - 1) * slowSignicicance / 4 / (diffSignificance + 1) + 1) * speed
+            absSpeed < 0.8 -> ((1.2 - 1) * slowSignicicance / 4 / (diffSignificance + 1) + 1) * speed
+            absSpeed < 0.9 -> ((1.08 - 1) * slowSignicicance / 4 / (diffSignificance + 1) + 1) * speed
+            absSpeed < 1.0 -> ((1.05 - 1) * slowSignicicance / 4 / (diffSignificance + 1) + 1) * speed
+            absSpeed < 1.1 -> ((1.01 - 1) * slowSignicicance / 4 / (diffSignificance + 1) + 1) * speed
+            else -> 1.0 * speed
+        } * (1 + diffRatio * diffSignificance)
+    }
+
+    private fun compensate3(speed: Double, diffRatio: Double): Double {
+        val maxSpeed = 1.11
+        val diffSignificance = 1
+        val p: Double = 1.5
+
+        val s1 = maxSpeed * (abs(speed) / maxSpeed).pow(1/p) * sign(speed)
+        val s2 = s1 * (1 + diffRatio * diffSignificance) // / (diffSignificance + 1)
+        return s2
+    }
+
+    private fun compensate4(speed: Double, diffRatio: Double): Double {
+        val maxSpeed = 1.11
+        val diffSignificance = 1
+        val p: Double = 1.5
+
+        val s1 = maxSpeed * (abs(speed) / maxSpeed).pow(1/p) * sign(speed)
+        val s2 = s1 * (1 + diffRatio * diffSignificance) // / (diffSignificance + 1)
+        return s2
+    }
+
     suspend fun straight(vehicle: Vehicle, distance: Double, headDirection: String?, speed: Double) {
         val sign = if ("backward".equals(headDirection, ignoreCase = true)) -1 else 1
 
-        val (actualSpeed: Float, actual) = speedToControl(speed)
+        val (actualSpeed: Float, actual) = speedToControl(compensate(speed, 0.0))
         val t: Long = ((distance / actualSpeed) * 1000.0).roundToLong()
         vehicle.setControl(actual * sign, actual * sign)
         delay(t)
