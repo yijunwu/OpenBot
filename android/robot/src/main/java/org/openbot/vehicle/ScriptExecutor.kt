@@ -212,16 +212,25 @@ internal object Robot {
         val controlValueForMaxSpeed = 1.4
         var actualLeft: Double
         var actualRight: Double
-        val t: Long
+        var t: Double
         // 如果速度超出最大速度，则等比例调整左右轮速度（保持半径不变），同时延长动作时间
         if (max(abs(leftSpeed), abs(rightSpeed)) > maxSpeed) {
             actualLeft = leftSpeed / max(abs(leftSpeed), abs(rightSpeed)) * maxSpeed
             actualRight = rightSpeed / max(abs(leftSpeed), abs(rightSpeed)) * maxSpeed
-            t = ((angle / speed) * (max(abs(leftSpeed), abs(rightSpeed)) / maxSpeed) * 1000).toLong()
+            t = (angle / speed) * (max(abs(leftSpeed), abs(rightSpeed)) / maxSpeed) * 1000
         } else {
             actualLeft = leftSpeed
             actualRight = rightSpeed
-            t = (angle / speed * 1000).toLong()
+            t = angle / speed * 1000
+        }
+        val maxLeftRight = max(abs(actualLeft), abs(actualRight))
+        when {
+            (maxLeftRight < 0.1) -> t *= 4.0
+            (maxLeftRight < 0.2) -> t *= 3.0
+            (maxLeftRight < 0.3) -> t *= 2.0
+            (maxLeftRight < 0.4) -> t *= 1.5
+            (maxLeftRight < 0.5) -> t *= 1.2
+            (maxLeftRight < 0.6) -> t *= 1.1
         }
         //低速负载补偿
         val diffRatio = (actualRight - actualLeft).pow(2) / (actualRight.pow(2) + actualLeft.pow(2)) / 2
@@ -231,7 +240,7 @@ internal object Robot {
         val rightSpeedAndControl = speedToControl(actualRight)
 
         vehicle.setControl(leftSpeedAndControl.second * sign2, rightSpeedAndControl.second * sign2)
-        delay(if (speed > 2000) 4000 else t)
+        delay(t.roundToLong())
         //delay(t + 100)
         vehicle.setControl(0.0F, 0.0F)
         Log.i("ScriptExecutor",
