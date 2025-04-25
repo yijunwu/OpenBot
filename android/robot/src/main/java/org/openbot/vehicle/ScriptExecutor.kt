@@ -226,11 +226,15 @@ internal object Robot {
         val maxLeftRight = max(abs(actualLeft), abs(actualRight))
         when {
             (maxLeftRight < 0.1) -> t *= 4.0
-            (maxLeftRight < 0.2) -> t *= 3.0
-            (maxLeftRight < 0.3) -> t *= 2.0
-            (maxLeftRight < 0.4) -> t *= 1.5
-            (maxLeftRight < 0.5) -> t *= 1.2
-            (maxLeftRight < 0.6) -> t *= 1.1
+            (maxLeftRight < 0.2) -> t *= 3.5
+            (maxLeftRight < 0.3) -> t *= 3.1
+            (maxLeftRight < 0.4) -> t *= 2.8
+            (maxLeftRight < 0.5) -> t *= 2.6
+            (maxLeftRight < 0.6) -> t *= 2.4
+            (maxLeftRight < 0.7) -> t *= 2.2
+            (maxLeftRight < 0.8) -> t *= 2.1
+            (maxLeftRight < 0.9) -> t *= 2.05
+            else -> t *= 2.0
         }
         //低速负载补偿
         val diffRatio = (actualRight - actualLeft).pow(2) / (actualRight.pow(2) + actualLeft.pow(2)) / 2
