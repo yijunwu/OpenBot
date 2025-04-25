@@ -196,13 +196,13 @@ internal object Robot {
 
         if (sign(leftSpeed).roundToInt() * sign(rightSpeed).roundToInt() == 1) {
             if (abs(leftSpeed) > abs(rightSpeed) * 1.1) {
-                rightSpeed = rightSpeed * (abs(rightSpeed) / abs(leftSpeed)).pow(1.5)
+                rightSpeed = rightSpeed * (abs(rightSpeed) / abs(leftSpeed)).pow(1.5) / 1.5
                 leftSpeed = leftSpeed / cos(theta1) / cos(theta1) // * sign(theta2)
                 //rightSpeed = rightSpeed / cos(theta2) / cos(theta2)
                 //rightSpeed /= 3
             } else if (abs(rightSpeed) > abs(leftSpeed) * 1.1) {
                 //leftSpeed = leftSpeed / cos(theta1) / cos(theta1) // * sign(theta2)
-                leftSpeed = leftSpeed * (abs(leftSpeed) / abs(rightSpeed)).pow(1.5)
+                leftSpeed = leftSpeed * (abs(leftSpeed) / abs(rightSpeed)).pow(1.5) / 1.5
                 rightSpeed = rightSpeed / cos(theta2) / cos(theta2)
                 //leftSpeed /= 3
             }
@@ -236,6 +236,7 @@ internal object Robot {
             (maxLeftRight < 0.9) -> t *= 2.1
             else -> t *= 2.0
         }
+        t*= 0.7
         //低速负载补偿
         val diffRatio = (actualRight - actualLeft).pow(2) / (actualRight.pow(2) + actualLeft.pow(2)) / 2
         actualLeft = compensate3(actualLeft, diffRatio)
@@ -246,6 +247,8 @@ internal object Robot {
         vehicle.setControl(leftSpeedAndControl.second * sign2, rightSpeedAndControl.second * sign2)
         delay(t.roundToLong())
         //delay(t + 100)
+        vehicle.setControl(0.0F, 0.0F)
+        //delay(100)
         vehicle.setControl(0.0F, 0.0F)
         Log.i("ScriptExecutor",
             "执行旋转：角度=$angle° 半径=${radius}m 转动方向=$rotateDirection 车头朝向=$headDirection 速度=${speed}d/s",
@@ -281,7 +284,7 @@ internal object Robot {
 
     private fun compensate3(speed: Double, diffRatio: Double): Double {
         val maxSpeed = 1.11
-        val p: Double = 1.3 // prev 2.5, 2.8, 4.0, 5.0(低速2圈）, 2.0（低速3/4圈，高速半圈），1.8（低速3/4圈，高速半圈），1.2（低速0.5圈，高速0.65圈）
+        val p: Double = 1.2 // prev 2.5, 2.8, 4.0, 5.0(低速2圈）, 2.0（低速3/4圈，高速半圈），1.8（低速3/4圈，高速半圈），1.2（低速0.5圈，高速0.65圈）
         //1.5（低速3/4圈，高速0.65圈），1.3（低速0.65圈，高速0.65圈）
 
         val s1 = maxSpeed * (abs(speed) / maxSpeed).pow(1/p) * sign(speed)
@@ -306,6 +309,7 @@ internal object Robot {
         val t: Long = ((distance / actualSpeed) * 1000.0).roundToLong()
         vehicle.setControl(actual * sign, actual * sign)
         delay(t)
+        vehicle.setControl(0.0F, 0.0F)
         vehicle.setControl(0.0F, 0.0F)
 
         Log.i("ScriptExecutor",
