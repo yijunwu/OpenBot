@@ -20,6 +20,7 @@ import kotlin.math.atan
 import kotlin.math.cos
 import kotlin.math.max
 import kotlin.math.pow
+import kotlin.math.roundToInt
 import kotlin.math.sign
 
 
@@ -193,9 +194,19 @@ internal object Robot {
         var theta1 = atan(length / 2 / (sign1 * radius + adjustedWidth / 2))
         var theta2 = atan(length / 2 / (sign1 * radius - adjustedWidth / 2))
 
-        leftSpeed = leftSpeed / cos(theta1) / cos(theta1) // * sign(theta2)
-        rightSpeed = 0.02 * time //rightSpeed * cos(theta2) * cos(theta2)
-        time++
+        if (sign(leftSpeed).roundToInt() * sign(rightSpeed).roundToInt() == 1) {
+            if (abs(leftSpeed) > abs(rightSpeed) * 1.2) {
+                rightSpeed = leftSpeed * (sign1 * radius - adjustedWidth / 2) / (sign1 * radius + adjustedWidth / 2) / 4
+                leftSpeed = leftSpeed / cos(theta1) / cos(theta1) // * sign(theta2)
+                //rightSpeed = rightSpeed / cos(theta2) / cos(theta2)
+                //rightSpeed /= 3
+            } else if (abs(rightSpeed) > abs(leftSpeed) * 1.2) {
+                //leftSpeed = leftSpeed / cos(theta1) / cos(theta1) // * sign(theta2)
+                leftSpeed = rightSpeed * (sign1 * radius + adjustedWidth / 2) / (sign1 * radius - adjustedWidth / 2) / 4
+                rightSpeed = rightSpeed / cos(theta2) / cos(theta2)
+                //leftSpeed /= 3
+            }
+        }
 
         val maxSpeed = 1.11
         val controlValueForMaxSpeed = 1.4
@@ -215,7 +226,7 @@ internal object Robot {
         //低速负载补偿
         val diffRatio = (actualRight - actualLeft).pow(2) / (actualRight.pow(2) + actualLeft.pow(2)) / 2
         actualLeft = compensate3(actualLeft, diffRatio)
-        //actualRight = compensate3(actualRight, diffRatio)
+        actualRight = compensate3(actualRight, diffRatio)
         val leftSpeedAndControl = speedToControl(actualLeft)
         val rightSpeedAndControl = speedToControl(actualRight)
 
@@ -297,11 +308,15 @@ internal object Robot {
         val maxSpeedInMetersPerSec = 1.11 // 当传255给到单片机时车子能达到的速度，米/秒
         val controlValueForMaxSpeed = 1.0
         val controlValueForZeroSpeed = 0.2
+        val minSpeed = maxSpeedInMetersPerSec / 10
+        val controlValueForMinSpeed = 0.3
         val range = controlValueForMaxSpeed - controlValueForZeroSpeed
         val actualSpeed: Float = min(speedAbs, maxSpeedInMetersPerSec).toFloat()
 
-        val actual =
-            (actualSpeed / maxSpeedInMetersPerSec * range + controlValueForZeroSpeed).toFloat()
+        val actual = if (speedAbs < minSpeed)
+                (actualSpeed / minSpeed * controlValueForMinSpeed).toFloat()
+            else
+                (actualSpeed / maxSpeedInMetersPerSec * range + controlValueForZeroSpeed).toFloat()
         return Pair(actualSpeed * sign(speed).toFloat(), actual * sign(speed).toFloat())
     }
 }
