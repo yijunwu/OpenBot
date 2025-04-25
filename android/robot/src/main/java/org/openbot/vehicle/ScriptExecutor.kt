@@ -159,6 +159,7 @@ class ScriptExecutor(val vehicle: Vehicle) {
 
 // 假设存在的机器人操作方法
 internal object Robot {
+    var time: Int = 0
     val rightFactor: Double = 1.66
     val leftFactor: Double = 1.05 * rightFactor
     val backwardFactor: Double = 1.1
@@ -193,7 +194,8 @@ internal object Robot {
         var theta2 = atan(length / 2 / (sign1 * radius - adjustedWidth / 2))
 
         leftSpeed = leftSpeed / cos(theta1) / cos(theta1) // * sign(theta2)
-        rightSpeed = 0.0 //rightSpeed * cos(theta2) * cos(theta2)
+        rightSpeed = 0.02 * time //rightSpeed * cos(theta2) * cos(theta2)
+        time++
 
         val maxSpeed = 1.11
         val controlValueForMaxSpeed = 1.4
@@ -213,7 +215,7 @@ internal object Robot {
         //低速负载补偿
         val diffRatio = (actualRight - actualLeft).pow(2) / (actualRight.pow(2) + actualLeft.pow(2)) / 2
         actualLeft = compensate3(actualLeft, diffRatio)
-        actualRight = compensate3(actualRight, diffRatio)
+        //actualRight = compensate3(actualRight, diffRatio)
         val leftSpeedAndControl = speedToControl(actualLeft)
         val rightSpeedAndControl = speedToControl(actualRight)
 
@@ -255,7 +257,8 @@ internal object Robot {
 
     private fun compensate3(speed: Double, diffRatio: Double): Double {
         val maxSpeed = 1.11
-        val p: Double = 5.0 // prev 2.5, 2.8, 4.0
+        val p: Double = 1.3 // prev 2.5, 2.8, 4.0, 5.0(低速2圈）, 2.0（低速3/4圈，高速半圈），1.8（低速3/4圈，高速半圈），1.2（低速0.5圈，高速0.65圈）
+        //1.5（低速3/4圈，高速0.65圈），1.3（低速0.65圈，高速0.65圈）
 
         val s1 = maxSpeed * (abs(speed) / maxSpeed).pow(1/p) * sign(speed)
         val s2 = s1 * (1) // / (diffSignificance + 1)
