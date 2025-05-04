@@ -29,9 +29,12 @@ import android.graphics.RectF;
 import android.text.TextUtils;
 import android.util.Pair;
 import android.util.TypedValue;
+
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.Queue;
 import org.openbot.env.BorderedText;
 import org.openbot.env.ImageUtils;
@@ -74,8 +77,12 @@ public class MultiBoxTracker {
   private float leftControl;
   private float rightControl;
   private boolean useDynamicSpeed = false;
+  private int trackId = -1;
+  private ByteTracker byteTracker = new ByteTracker();
 
   public MultiBoxTracker(final Context context) {
+    byteTracker.init(10, 10); // TODO wuyijun 待优化
+
     for (final int color : COLORS) {
       availableColors.add(color);
     }
@@ -120,6 +127,39 @@ public class MultiBoxTracker {
 
   public synchronized void trackResults(final List<Recognition> results, final long timestamp) {
     logger.i("Processing %d results from %d", results.size(), timestamp);
+    ArrayList<JavaObject> resultList = new ArrayList<>();
+    for (int i = 0; i < results.size(); i ++) {
+      Recognition recognition = results.get(i);
+      JavaObject detected = new JavaObject(recognition.getLocation(), recognition.getClassId(), recognition.getConfidence());
+      resultList.add(detected);
+    }
+    List<JavaSTrack> stracks = byteTracker.update(resultList);
+    int index = -1;
+    for (int i = 0; i < stracks.size(); i ++) {
+      JavaSTrack strack = stracks.get(i);
+      if (strack.trackId == this.trackId || this.trackId == -1) {
+        index = i;
+        break;
+      }
+    }
+    int recIndex = -1; // TODO wuyijun 根据RecF的值匹配recognition index
+    for (int i = 0; i < results.size() && index >= 0; i ++) {
+      if (results.get(i).getLocation().equals(stracks.get(index).rect)) {
+        recIndex = i;
+        break;
+      }
+    }
+    // swap i and 0
+    if (recIndex > 0) {
+      Recognition temp = results.get(0);
+      results.set(0, results.get(recIndex));
+      results.set(recIndex, temp);
+    }
+    if (this.trackId == -1 && !results.isEmpty()) {
+      this.trackId = stracks.get(index).trackId;
+    } else if (index == -1 && !results.isEmpty()) {
+      this.trackId = stracks.get(0).trackId;
+    }
     processResults(results);
   }
 
