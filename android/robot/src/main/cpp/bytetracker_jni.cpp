@@ -29,9 +29,9 @@ bool javaListToCppVector(JNIEnv *env, jobject javaObjectsList, std::vector<Objec
     }
 
     // Make sure to use the correct package name here
-    jclass objClass = env->FindClass("com/tencent/ncnnyolox/JavaObject");
+    jclass objClass = env->FindClass("org/openbot/tracking/JavaObject");
     if (!objClass) {
-        LOGE("Failed to find class com/tencent/ncnnyolox/JavaObject");
+        LOGE("Failed to find class org/openbot/tracking/JavaObject");
         return false;
     }
     jfieldID rectField = env->GetFieldID(objClass, "rect", "Landroid/graphics/RectF;");
@@ -122,9 +122,9 @@ jobject cppVectorToJavaList(JNIEnv *env, const std::vector<STrack>& cppTracks) {
     }
 
     // Make sure to use the correct package name here
-    jclass javaSTrackClass = env->FindClass("com/tencent/ncnnyolox/JavaSTrack");
+    jclass javaSTrackClass = env->FindClass("org/openbot/tracking/JavaSTrack");
     if (!javaSTrackClass) {
-        LOGE("Failed to find class com/tencent/ncnnyolox/JavaSTrack");
+        LOGE("Failed to find class org/openbot/tracking/JavaSTrack");
         return nullptr;
     }
     // Constructor: (int trackId, int state, float score, RectF rect)
@@ -205,7 +205,7 @@ extern "C" {
 
 // --- Implementation for ByteTracker.java native methods ---
 JNIEXPORT jlong JNICALL
-Java_com_tencent_ncnnyolox_ByteTracker_nativeInit(JNIEnv *env, jobject thiz, jint frameRate, jint trackBuffer) {
+Java_org_openbot_tracking_ByteTracker_nativeInit(JNIEnv *env, jobject thiz, jint frameRate, jint trackBuffer) {
     LOGD("nativeInit called with frameRate=%d, trackBuffer=%d", frameRate, trackBuffer);
 
     // Use nothrow version of new
@@ -221,7 +221,7 @@ Java_com_tencent_ncnnyolox_ByteTracker_nativeInit(JNIEnv *env, jobject thiz, jin
 }
 
 JNIEXPORT jobject JNICALL
-Java_com_tencent_ncnnyolox_ByteTracker_nativeUpdate(JNIEnv *env, jobject thiz, jlong nativePtr, jobject javaObjectsList) {
+Java_org_openbot_tracking_ByteTracker_nativeUpdate(JNIEnv *env, jobject thiz, jlong nativePtr, jobject javaObjectsList) {
     BYTETracker* tracker = reinterpret_cast<BYTETracker*>(nativePtr);
     if (!tracker) {
         LOGE("nativeUpdate called with null nativePtr!");
@@ -261,7 +261,7 @@ Java_com_tencent_ncnnyolox_ByteTracker_nativeUpdate(JNIEnv *env, jobject thiz, j
 }
 
 JNIEXPORT void JNICALL
-Java_com_tencent_ncnnyolox_ByteTracker_nativeRelease(JNIEnv *env, jobject thiz, jlong nativePtr) {
+Java_org_openbot_tracking_ByteTracker_nativeRelease(JNIEnv *env, jobject thiz, jlong nativePtr) {
     BYTETracker* tracker = reinterpret_cast<BYTETracker*>(nativePtr);
     if (tracker) {
         LOGD("nativeRelease called for tracker at %p. Deleting...", tracker);

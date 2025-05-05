@@ -14,10 +14,10 @@ public class ByteTracker implements AutoCloseable {
     // Load the native library
     static {
         try {
-            System.loadLibrary("ncnnyolox"); // Use the same library name as in CMakeLists.txt
-            Log.i(TAG, "Successfully loaded native library 'ncnnyolox'");
+            System.loadLibrary("app"); // Use the same library name as in CMakeLists.txt
+            Log.i(TAG, "Successfully loaded native library 'app'");
         } catch (UnsatisfiedLinkError e) {
-            Log.e(TAG, "Failed to load native library 'ncnnyolox'", e);
+            Log.e(TAG, "Failed to load native library 'app'", e);
             // Handle library loading failure (e.g., throw an exception or set a flag)
         }
     }

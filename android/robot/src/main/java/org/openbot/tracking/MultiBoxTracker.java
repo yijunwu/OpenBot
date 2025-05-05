@@ -142,25 +142,40 @@ public class MultiBoxTracker {
         break;
       }
     }
-    int recIndex = -1; // TODO wuyijun 根据RecF的值匹配recognition index
-    for (int i = 0; i < results.size() && index >= 0; i ++) {
-      if (results.get(i).getLocation().equals(stracks.get(index).rect)) {
-        recIndex = i;
-        break;
+//    int recIndex = -1; // TODO wuyijun 根据RecF的值匹配recognition index
+//    for (int i = 0; i < results.size() && index >= 0; i ++) {
+//      if (results.get(i).getLocation().equals(stracks.get(index).rect)) {
+//        recIndex = i;
+//        break;
+//      }
+//    }
+//
+//    // swap i and 0
+//    if (recIndex > 0) {
+//      Recognition temp = results.get(0);
+//      results.set(0, results.get(recIndex));
+//      results.set(recIndex, temp);
+//    }
+
+    List<Recognition> trackedRecognitions = new ArrayList<>();
+    if (index >= 0 && index < stracks.size()) {
+      Recognition recognition = new Recognition("0", "" + stracks.get(index).trackId, stracks.get(index).score, stracks.get(index).rect, 1);
+      trackedRecognitions.add(recognition);
+    }
+    for (int i = 0; i < stracks.size(); i ++) {
+      if (i != index) {
+        Recognition recognition = new Recognition("0", "" + stracks.get(i).trackId, stracks.get(i).score, stracks.get(i).rect, 1);
+        trackedRecognitions.add(recognition);
       }
     }
-    // swap i and 0
-    if (recIndex > 0) {
-      Recognition temp = results.get(0);
-      results.set(0, results.get(recIndex));
-      results.set(recIndex, temp);
-    }
-    if (this.trackId == -1 && !results.isEmpty()) {
+
+    if (this.trackId == -1 && !results.isEmpty() && index >= 0 && index < stracks.size()) {
       this.trackId = stracks.get(index).trackId;
-    } else if (index == -1 && !results.isEmpty()) {
+    } else if (index == -1 && !results.isEmpty() && !stracks.isEmpty()) {
       this.trackId = stracks.get(0).trackId;
     }
-    processResults(results);
+    processResults(trackedRecognitions);
+    //processResults(results);
   }
 
   private Matrix getFrameToCanvasMatrix() {
