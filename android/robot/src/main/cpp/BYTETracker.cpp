@@ -50,6 +50,7 @@ vector<STrack> BYTETracker::update(const vector<Object>& objects)
 			float score = objects[i].prob;
 
 			STrack strack(STrack::tlbr_to_tlwh(tlbr_), score);
+            //strack.latest_detect_id = objects[i].id;
 			if (score >= track_thresh)
 			{
 				detections.push_back(strack);
