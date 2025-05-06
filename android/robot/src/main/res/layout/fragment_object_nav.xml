@@ -365,8 +365,7 @@
         </LinearLayout>
         <include
             android:id="@+id/controllerContainer"
-            layout="@layout/control_buttons"
-            android:visibility="gone" />
+            layout="@layout/control_buttons"/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
