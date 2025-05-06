@@ -81,7 +81,7 @@ public class MultiBoxTracker {
   private ByteTracker byteTracker = new ByteTracker();
 
   public MultiBoxTracker(final Context context) {
-    byteTracker.init(10, 10); // TODO wuyijun 待优化
+    byteTracker.init(10, 100); // TODO wuyijun 待优化
 
     for (final int color : COLORS) {
       availableColors.add(color);
@@ -125,8 +125,17 @@ public class MultiBoxTracker {
     }
   }
 
-  public synchronized void trackResults(final List<Recognition> results, final long timestamp) {
+  public synchronized void trackResults(final List<Recognition> results, final long timestamp, final boolean byteTrack) {
     logger.i("Processing %d results from %d", results.size(), timestamp);
+    if (byteTrack) {
+      trackResults(results, timestamp);
+    } else {
+      processResults(results);
+    }
+  }
+
+  public synchronized void trackResults(final List<Recognition> results, final long timestamp) {
+
     ArrayList<JavaObject> resultList = new ArrayList<>();
     for (int i = 0; i < results.size(); i ++) {
       Recognition recognition = results.get(i);

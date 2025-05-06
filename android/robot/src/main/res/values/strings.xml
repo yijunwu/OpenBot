@@ -177,8 +177,8 @@
     <string name="text_on_qr_screen">Place QR code inside the frame to scan. Please avoid shake to get results quickly.</string>
     <string name="edit_profile">Edit Profile</string>
     <string name="logout">Logout</string>
-    <string name="auto_mode">Auto Mode</string>
-    <string name="dynamic_speed">Dynamic Speed</string>
+    <string name="auto_mode">Auto</string>
+    <string name="dynamic_speed">Dyna Speed</string>
     <string name="bumpers">Bumpers</string>
     <string name="n_a">N/A</string>
     <string name="robot_type">Robot Type:</string>

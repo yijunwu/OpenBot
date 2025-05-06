@@ -71,6 +71,7 @@ public class ObjectNavFragment extends CameraFragment {
 
   private Detector detector;
 
+  private boolean byteTrack;
   private boolean mirrorControl;
   private Matrix frameToCropTransform;
   private Bitmap croppedBitmap;
@@ -215,6 +216,8 @@ public class ObjectNavFragment extends CameraFragment {
 
     binding.mirrorControl.setOnClickListener(v -> mirrorControl());
 
+    binding.byteTrackToggle.setOnClickListener(v -> binding.byteTrackToggle.setChecked(binding.byteTrackToggle.isChecked()));
+
     List<String> models =
         getModelNames(f -> f.type.equals(Model.TYPE.DETECTOR) && f.pathType != Model.PATH_TYPE.URL);
     initModelSpinner(binding.modelSpinner, models, preferencesManager.getObjectNavModel());
@@ -342,7 +345,12 @@ public class ObjectNavFragment extends CameraFragment {
 
     mirrorControl = !mirrorControl;
   }
+
   private void mirrorControl() {
+      mirrorControl = !mirrorControl;
+  }
+
+  private void mirrorControl3() {
         //executeScript("rotate(360, 0.2, clock-wise, forward, 0.2)");
         //executeScript("rotate(360, 0.2, counter-clockwise, forward, 0.2)");
         //executeScript("rotate(360, 0.2, clock-wise, backward, 0.2)");
@@ -358,12 +366,14 @@ public class ObjectNavFragment extends CameraFragment {
             if (binding.dynamicSpeed.isChecked())
                 speed = 360;
             String cmd;
-            if (time == 0)
-                cmd = "rotate(360, 0.215, clock-wise, forward, 180)";
-            else if (time == 1)
-                cmd = "rotate(360, 0.075, clock-wise, forward, 360)";
-            else
-                cmd = "rotate(360, " + 0.1 / 4 * time + ", clock-wise, forward, " + speed + ")";
+            //if (time == 0)
+            //    cmd = "rotate(360, 0.215, clock-wise, forward, 180)";
+            //else if (time == 1)
+            int radiusTimes = time / 1 ;
+            cmd = "rotate(360, " + 0.025 * radiusTimes + ", clockwise, forward, " + 60 * (time % 1 + 3) +")";
+            //cmd = "rotate(360, 0.2, clockwise, forward, " + 60 * (time % 5 + 2) + ")";
+            //else
+            //    cmd = "rotate(360, " + 0.1 / 4 * time + ", clock-wise, forward, " + speed + ")";
             messages.add(cmd);
             ChatAdapter adapter = (ChatAdapter) chatRecyclerView.getAdapter();
             adapter.submitList(messages);
@@ -630,7 +640,7 @@ public class ObjectNavFragment extends CameraFragment {
                 }
               }
 
-              tracker.trackResults(mappedRecognitions, frameNum);
+              tracker.trackResults(mappedRecognitions, frameNum, binding.byteTrackToggle.isChecked());
               Control target = tracker.updateTarget();
               if (mirrorControl) {
                 handleDriveCommand(target.mirror());
