@@ -13,6 +13,9 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.camera.core.AspectRatio;
+import androidx.camera.core.Camera;
+import androidx.camera.core.CameraControl;
+import androidx.camera.core.CameraInfo;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageAnalysis;
 import androidx.camera.core.ImageProxy;
@@ -22,6 +25,9 @@ import androidx.camera.view.PreviewView;
 import androidx.core.content.ContextCompat;
 import androidx.viewbinding.ViewBinding;
 import com.google.common.util.concurrent.ListenableFuture;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -44,6 +50,9 @@ public abstract class CameraFragment extends ControlsFragment {
   private YuvToRgbConverter converter;
   private Bitmap bitmapBuffer;
   private int rotationDegrees;
+  private Camera camera;
+  private CameraControl cameraControl;
+  private CameraInfo cameraInfo;
 
   protected View inflateFragment(int resId, LayoutInflater inflater, ViewGroup container) {
     return addCamera(inflater.inflate(resId, container, false), inflater, container);
@@ -102,19 +111,27 @@ public abstract class CameraFragment extends ControlsFragment {
   private void bindCameraUseCases() {
     converter = new YuvToRgbConverter(requireContext());
     bitmapBuffer = null;
-    preview = new Preview.Builder().setTargetAspectRatio(AspectRatio.RATIO_16_9).build();
+    preview = new Preview.Builder().setTargetAspectRatio(AspectRatio.RATIO_4_3).build();
     final boolean rotated = ImageUtils.getScreenOrientation(requireActivity()) % 180 == 90;
     final PreviewView.ScaleType scaleType =
         rotated ? PreviewView.ScaleType.FIT_CENTER : PreviewView.ScaleType.FIT_START;
     previewView.setScaleType(scaleType);
     preview.setSurfaceProvider(previewView.getSurfaceProvider());
     CameraSelector cameraSelector =
-        new CameraSelector.Builder().requireLensFacing(lensFacing).build();
+        new CameraSelector.Builder().requireLensFacing(lensFacing)
+//           .addCameraFilter(cameraInfos -> {
+//               List<CameraInfo> filtered = new ArrayList<>();
+//               if (cameraInfos.size() >= 1) {
+//                 filtered.add(cameraInfos.get(cameraInfos.size() - 1));
+//               }
+//               return filtered;
+//           })
+                .build();
     ImageAnalysis imageAnalysis;
 
     if (analyserResolution == null)
       imageAnalysis =
-          new ImageAnalysis.Builder().setTargetAspectRatio(AspectRatio.RATIO_16_9).build();
+          new ImageAnalysis.Builder().setTargetAspectRatio(AspectRatio.RATIO_4_3).build();
     else
       imageAnalysis = new ImageAnalysis.Builder().setTargetResolution(analyserResolution).build();
     // insert your code here.
@@ -134,7 +151,18 @@ public abstract class CameraFragment extends ControlsFragment {
     try {
       if (cameraProvider != null) {
         cameraProvider.unbindAll();
-        cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageAnalysis);
+        //List<CameraInfo> cameraInfos = cameraProvider.getAvailableCameraInfos();
+        Camera camera = cameraProvider.bindToLifecycle(this, cameraSelector, preview, imageAnalysis);
+        // Get CameraControl and CameraInfo
+//        if (camera != null) {
+//          cameraControl = camera.getCameraControl();
+//          cameraInfo = camera.getCameraInfo();
+//
+//          float minZoom = cameraInfo.getZoomState().getValue().getMinZoomRatio();
+//          float maxZoom = cameraInfo.getZoomState().getValue().getMaxZoomRatio();
+//          // Set initial zoom state
+//          cameraControl.setZoomRatio(minZoom);
+//        }
       }
     } catch (Exception e) {
       Timber.e("Use case binding failed: %s", e.toString());
