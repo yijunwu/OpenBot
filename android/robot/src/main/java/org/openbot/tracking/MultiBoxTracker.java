@@ -30,11 +30,12 @@ import android.text.TextUtils;
 import android.util.Pair;
 import android.util.TypedValue;
 
+import androidx.annotation.NonNull;
+
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Optional;
 import java.util.Queue;
 import org.openbot.env.BorderedText;
 import org.openbot.env.ImageUtils;
@@ -166,6 +167,19 @@ public class MultiBoxTracker {
 //      results.set(recIndex, temp);
 //    }
 
+    List<Recognition> trackedRecognitions = strackToRecognition(stracks, index);
+
+    if (this.trackId == -1 && !results.isEmpty() && index >= 0 && index < stracks.size()) {
+      this.trackId = stracks.get(index).trackId;
+    } else if (index == -1 && !results.isEmpty() && !stracks.isEmpty()) {
+      this.trackId = stracks.get(0).trackId;
+    }
+    processResults(trackedRecognitions);
+    //processResults(results);
+  }
+
+  @NonNull
+  private static List<Recognition> strackToRecognition(List<JavaSTrack> stracks, int index) {
     List<Recognition> trackedRecognitions = new ArrayList<>();
     if (index >= 0 && index < stracks.size()) {
       Recognition recognition = new Recognition("0", "" + stracks.get(index).trackId, stracks.get(index).score, stracks.get(index).rect, 1);
@@ -177,14 +191,7 @@ public class MultiBoxTracker {
         trackedRecognitions.add(recognition);
       }
     }
-
-    if (this.trackId == -1 && !results.isEmpty() && index >= 0 && index < stracks.size()) {
-      this.trackId = stracks.get(index).trackId;
-    } else if (index == -1 && !results.isEmpty() && !stracks.isEmpty()) {
-      this.trackId = stracks.get(0).trackId;
-    }
-    processResults(trackedRecognitions);
-    //processResults(results);
+    return trackedRecognitions;
   }
 
   private Matrix getFrameToCanvasMatrix() {
@@ -208,6 +215,9 @@ public class MultiBoxTracker {
             false);
   }
 
+  public synchronized Control updateTarget() {
+    return updateTarget(false);
+  }
   /**
    * Determine the robot controls/steering from the position of the tracked object/person on screen.
    * The follow speed is adjusted based on the area of the bounding box of the tracked object.
@@ -215,7 +225,7 @@ public class MultiBoxTracker {
    *
    * @return the adjusted speed control for left and right wheels in the range -1.0 ... 1.0
    */
-  public synchronized Control updateTarget() {
+  public synchronized Control updateTarget(boolean fastTurn) {
     if (!trackedObjects.isEmpty()) {
       // Pick detection with highest probability
       final RectF trackedPos = new RectF(trackedObjects.get(0).location);
@@ -246,12 +256,27 @@ public class MultiBoxTracker {
         float scaleFactor = 1.0f - boxArea / (frameWidth * frameHeight);
         scaleFactor = scaleFactor > 0.75f ? 1.0f : scaleFactor; // tracked object far, full speed
         // apply scale factor if tracked object is not too near, otherwise stop
-        if (scaleFactor > 0.25f) {
+        if (fastTurn) {
           leftControl *= scaleFactor;
           rightControl *= scaleFactor;
+
+          float mean = (leftControl + rightControl) / 2.0F;
+          float diff = (leftControl - rightControl) / 2.0F;
+          if (scaleFactor > 0.25f) {
+            leftControl = mean + diff / scaleFactor * 1.0F;
+            rightControl = mean - diff / scaleFactor * 1.0F;
+          } else {
+            leftControl = 0 + diff / scaleFactor * 1.0F;
+            rightControl = 0 - diff / scaleFactor * 1.0F;
+          }
         } else {
-          leftControl = 0.0f;
-          rightControl = 0.0f;
+          if (scaleFactor > 0.25f) {
+            leftControl *= scaleFactor;
+            rightControl *= scaleFactor;
+          } else {
+            leftControl = 0.0f;
+            rightControl = 0.0f;
+          }
         }
       }
 

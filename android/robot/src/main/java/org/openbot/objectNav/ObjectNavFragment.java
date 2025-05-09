@@ -70,8 +70,6 @@ public class ObjectNavFragment extends CameraFragment {
   private static final float TEXT_SIZE_DIP = 10;
 
   private Detector detector;
-
-  private boolean byteTrack;
   private boolean mirrorControl;
   private Matrix frameToCropTransform;
   private Bitmap croppedBitmap;
@@ -640,8 +638,9 @@ public class ObjectNavFragment extends CameraFragment {
                 }
               }
 
-              tracker.trackResults(mappedRecognitions, frameNum, binding.byteTrackToggle.isChecked());
-              Control target = tracker.updateTarget();
+              boolean byteTrack = binding.byteTrackToggle.isChecked();
+              tracker.trackResults(mappedRecognitions, frameNum, true);
+              Control target = tracker.updateTarget(byteTrack);
               if (mirrorControl) {
                 handleDriveCommand(target.mirror());
               } else {
