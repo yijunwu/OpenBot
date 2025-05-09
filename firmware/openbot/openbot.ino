@@ -952,7 +952,7 @@ void setup() {
 //------------------------------------------------------//
 void loop() {
   //Serial.println("in loop()9c_tft_espi*********************");
-  delay(10);
+  //delay(10);
 //   //esp_task_wdt_reset();
 #if (HAS_BLUETOOTH)
   // disconnecting
