@@ -193,8 +193,10 @@ public class Enums {
   }
 
   public enum Preview {
+    CUSTOM(new Size(3000, 4000)),
     FULL_HD(new Size(1080, 1920)),
     HD(new Size(720, 1280)),
+    HD_4_3(new Size(960, 1280)),
     SD(new Size(360, 640));
 
     private final Size value;

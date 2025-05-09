@@ -46,7 +46,7 @@ public abstract class CameraFragment extends ControlsFragment {
   private Preview preview;
   protected int lensFacing;
   private ProcessCameraProvider cameraProvider;
-  private Size analyserResolution = Enums.Preview.HD.getValue();
+  private Size analyserResolution = Enums.Preview.HD_4_3.getValue();
   private YuvToRgbConverter converter;
   private Bitmap bitmapBuffer;
   private int rotationDegrees;

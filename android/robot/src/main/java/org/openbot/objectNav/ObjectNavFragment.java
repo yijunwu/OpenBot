@@ -222,7 +222,7 @@ public class ObjectNavFragment extends CameraFragment {
         getModelNames(f -> f.type.equals(Model.TYPE.DETECTOR) && f.pathType != Model.PATH_TYPE.URL);
     initModelSpinner(binding.modelSpinner, models, preferencesManager.getObjectNavModel());
 
-    setAnalyserResolution(Enums.Preview.HD.getValue());
+    setAnalyserResolution(Enums.Preview.HD_4_3.getValue());
     binding.deviceSpinner.setOnItemSelectedListener(
         new AdapterView.OnItemSelectedListener() {
           @Override
