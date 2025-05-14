@@ -49,6 +49,25 @@ public class ByteTracker implements AutoCloseable {
     }
 
     /**
+     * ask the tracker to predict lost stracks.
+     *
+     * @return A list of tracked objects (STracks). Returns an empty list if not initialized or on error.
+     */
+    public ArrayList<JavaSTrack> predict_lost() {
+        if (this.nativePtr == 0) {
+            Log.w(TAG, "predict_lost called but ByteTracker is not initialized.");
+            return new ArrayList<>(); // Return empty list
+        }
+        try {
+            // Pass the native pointer and the list of objects to the native function
+            return nativePredictLost(this.nativePtr);
+        } catch (Throwable t) { // Catch potential errors during JNI call
+            Log.e(TAG, "Exception during nativePredictLost", t);
+            return new ArrayList<>(); // Return empty list on error
+        }
+    }
+
+    /**
      * Updates the tracker with new detections.
      *
      * @param objects Detected objects from the current frame.
@@ -119,6 +138,13 @@ public class ByteTracker implements AutoCloseable {
      * @return A long representing the pointer to the native ByteTracker object, or 0 on failure.
      */
     private native long nativeInit(int frameRate, int trackBuffer);
+
+    /**
+     * Calls the native C++ code to predict the lost stracks.
+     * @param nativePtr Pointer to the native ByteTracker object.
+     * @return List of tracked JavaSTrack.
+     */
+    private native ArrayList<JavaSTrack> nativePredictLost(long nativePtr);
 
     /**
      * Calls the native C++ code to update the tracker.

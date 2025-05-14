@@ -174,6 +174,9 @@ public class MultiBoxTracker {
     } else if (index == -1 && !results.isEmpty() && !stracks.isEmpty()) {
       this.trackId = stracks.get(0).trackId;
     }
+    if (trackedRecognitions.isEmpty()) {
+      byteTracker.predict_lost();
+    }
     processResults(trackedRecognitions);
     //processResults(results);
   }

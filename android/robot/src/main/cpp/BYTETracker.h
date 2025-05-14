@@ -9,7 +9,8 @@ public:
 	BYTETracker(int frame_rate = 30, int track_buffer = 30);
 	~BYTETracker();
 
-	vector<STrack> update(const vector<Object>& objects);
+    vector<STrack> predict_lost();
+    vector<STrack> update(const vector<Object>& objects);
 	Scalar get_color(int idx);
 
 private:

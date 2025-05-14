@@ -221,6 +221,38 @@ Java_org_openbot_tracking_ByteTracker_nativeInit(JNIEnv *env, jobject thiz, jint
 }
 
 JNIEXPORT jobject JNICALL
+Java_org_openbot_tracking_ByteTracker_nativePredictLost(JNIEnv *env, jobject thiz, jlong nativePtr) {
+    BYTETracker* tracker = reinterpret_cast<BYTETracker*>(nativePtr);
+    if (!tracker) {
+        LOGE("nativePredictLost called with null nativePtr!");
+        // Return an empty ArrayList
+        jclass listClass = env->FindClass("java/util/ArrayList");
+        jmethodID listConstructor = env->GetMethodID(listClass, "<init>", "()V");
+        return env->NewObject(listClass, listConstructor);
+    }
+
+    LOGD("nativePredictLost called for tracker at %p", tracker);
+
+    // --- Remove try-catch around tracker->update() ---
+    // Assume tracker->update() won't throw or handle potential crashes
+    std::vector<STrack> cppTracks = tracker->predict_lost();
+    LOGD("tracker->update() finished, %zu tracks returned.", cppTracks.size());
+    // --- End removal ---
+
+
+    jobject javaTracksList = cppVectorToJavaList(env, cppTracks);
+    if (!javaTracksList) {
+        LOGE("Failed to convert C++ Tracks to Java List in nativeUpdate");
+        jclass listClass = env->FindClass("java/util/ArrayList");
+        jmethodID listConstructor = env->GetMethodID(listClass, "<init>", "()V");
+        return env->NewObject(listClass, listConstructor);
+    }
+
+    LOGD("nativeUpdate returning Java ArrayList.");
+    return javaTracksList;
+}
+
+JNIEXPORT jobject JNICALL
 Java_org_openbot_tracking_ByteTracker_nativeUpdate(JNIEnv *env, jobject thiz, jlong nativePtr, jobject javaObjectsList) {
     BYTETracker* tracker = reinterpret_cast<BYTETracker*>(nativePtr);
     if (!tracker) {

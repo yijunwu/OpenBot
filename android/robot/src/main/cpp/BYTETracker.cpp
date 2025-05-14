@@ -14,6 +14,12 @@ BYTETracker::~BYTETracker()
 {
 }
 
+vector<STrack> BYTETracker::predict_lost()
+{
+	vector<STrack> output_stracks;
+	return output_stracks;
+}
+
 vector<STrack> BYTETracker::update(const vector<Object>& objects)
 {
 
