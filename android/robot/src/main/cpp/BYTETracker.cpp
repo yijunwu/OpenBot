@@ -16,7 +16,29 @@ BYTETracker::~BYTETracker()
 
 vector<STrack> BYTETracker::predict_lost()
 {
+	this->frame_id++;
+	vector<STrack*> unconfirmed;
+	vector<STrack*> tracked_stracks;
+	vector<STrack*> strack_pool;
 	vector<STrack> output_stracks;
+
+	// Add newly detected tracklets to tracked_stracks
+	for (int i = 0; i < this->tracked_stracks.size(); i++)
+	{
+		if (!this->tracked_stracks[i].is_activated)
+			unconfirmed.push_back(&this->tracked_stracks[i]);
+		else
+			tracked_stracks.push_back(&this->tracked_stracks[i]);
+	}
+
+	////////////////// Step 2: First association, with IoU //////////////////
+	strack_pool = joint_stracks(tracked_stracks, this->lost_stracks);
+	STrack::multi_predict(strack_pool, this->kalman_filter);
+
+	for (int i = 0; i < strack_pool.size(); i++)
+	{
+		output_stracks.push_back(*strack_pool[i]);
+	}
 	return output_stracks;
 }
 

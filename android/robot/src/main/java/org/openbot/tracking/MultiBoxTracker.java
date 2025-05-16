@@ -82,7 +82,7 @@ public class MultiBoxTracker {
   private ByteTracker byteTracker = new ByteTracker();
 
   public MultiBoxTracker(final Context context) {
-    byteTracker.init(10, 100); // TODO wuyijun 待优化
+    byteTracker.init(10, 50); // TODO wuyijun 待优化
 
     for (final int color : COLORS) {
       availableColors.add(color);
@@ -175,7 +175,7 @@ public class MultiBoxTracker {
       this.trackId = stracks.get(0).trackId;
     }
     if (trackedRecognitions.isEmpty()) {
-      byteTracker.predict_lost();
+      trackedRecognitions = strackToRecognition(byteTracker.predict_lost(), 0);
     }
     processResults(trackedRecognitions);
     //processResults(results);
