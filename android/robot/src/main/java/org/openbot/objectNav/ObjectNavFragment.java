@@ -126,32 +126,34 @@ public class ObjectNavFragment extends CameraFragment {
 
     // 初始化 RecyclerView
     View chatContainer = view.findViewById(R.id.chatListContainer);
-    // 通过容器获取 RecyclerView
-    RecyclerView chatRecyclerView = chatContainer.findViewById(R.id.chatRecyclerView);
-    if (chatRecyclerView != null) {
-      ArrayList<String> messages = new ArrayList<>();
-      messages.add("用户: 跳个蜜蜂的8字舞吧");
-      messages.add("小车: 好的，我是一只小蜜蜂，我跳一个8字舞");
-      messages.add("message 3");
-      ChatAdapter adapter = new ChatAdapter();
-      chatRecyclerView.setAdapter(adapter);
+    if (chatContainer != null) {
+        // 通过容器获取 RecyclerView
+        RecyclerView chatRecyclerView = chatContainer.findViewById(R.id.chatRecyclerView);
+        if (chatRecyclerView != null) {
+            ArrayList<String> messages = new ArrayList<>();
+            messages.add("用户: 跳个蜜蜂的8字舞吧");
+            messages.add("小车: 好的，我是一只小蜜蜂，我跳一个8字舞");
+            messages.add("message 3");
+            ChatAdapter adapter = new ChatAdapter();
+            chatRecyclerView.setAdapter(adapter);
 
-      chatViewModel.getMessages().observe(getViewLifecycleOwner(), list -> {
+            chatViewModel.getMessages().observe(getViewLifecycleOwner(), list -> {
                 adapter.submitList(list, () -> {
-                  chatRecyclerView.post(() -> chatRecyclerView.scrollToPosition(adapter.getItemCount() - 1));
+                    chatRecyclerView.post(() -> chatRecyclerView.scrollToPosition(adapter.getItemCount() - 1));
                 });
-              });
+            });
 
-      adapter.submitList(messages);
+            adapter.submitList(messages);
 
-      chatViewModel.getScript().observe(getViewLifecycleOwner(), script -> {
-        List<String> currentList = adapter.getCurrentList();
-        List<String> newList = new ArrayList<>(currentList);
-        newList.add(script);
-        adapter.submitList(newList);
-        executeScript(script);
-      });
+            chatViewModel.getScript().observe(getViewLifecycleOwner(), script -> {
+                List<String> currentList = adapter.getCurrentList();
+                List<String> newList = new ArrayList<>(currentList);
+                newList.add(script);
+                adapter.submitList(newList);
+                executeScript(script);
+            });
 
+        }
     }
 
     // 观察 ViewModel 数据变化
