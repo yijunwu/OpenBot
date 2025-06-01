@@ -133,7 +133,6 @@ public class ObjectNavFragment extends CameraFragment {
             ArrayList<String> messages = new ArrayList<>();
             messages.add("用户: 跳个蜜蜂的8字舞吧");
             messages.add("小车: 好的，我是一只小蜜蜂，我跳一个8字舞");
-            messages.add("message 3");
             ChatAdapter adapter = new ChatAdapter();
             chatRecyclerView.setAdapter(adapter);
 
