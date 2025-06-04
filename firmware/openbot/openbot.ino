@@ -48,13 +48,14 @@
 #define RTR_520 7    // Ready-to-Run with 520-motors
 #define MTV 8        // Multi Terrain Vehicle
 #define DIY_ESP32 9  // DIY without PCB
+#define DIY_ESP32C3 10  // DIY without PCB
 
 //------------------------------------------------------//
 // SETUP - Choose your body
 //------------------------------------------------------//
 
 // Setup the OpenBot version (DIY, PCB_V1, PCB_V2, RTR_TT, RC_CAR, LITE, RTR_TT2, RTR_520, DIY_ESP32)
-#define OPENBOT DIY
+#define OPENBOT DIY_ESP32C3
 
 //------------------------------------------------------//
 // SETTINGS - Global settings
@@ -533,6 +534,68 @@ const int PIN_LED_RF = 21;
 const int PIN_LED_Y = 14;
 const int PIN_LED_G = 27;
 const int PIN_LED_B = 26;
+
+//-------------------------DIY_ESP32C3----------------------//
+#elif (OPENBOT == DIY_ESP32C3)
+const String robot_type = "DIY_ESP32C3";
+#define MCU ESP32
+#include <esp_wifi.h>
+#define HAS_BLUETOOTH 0
+#define analogWrite ledcWrite
+#define attachPinChangeInterrupt attachInterrupt
+#define detachPinChangeInterrupt detachInterrupt
+#define digitalPinToPinChangeInterrupt digitalPinToInterrupt
+#define PIN_PWM_L1 CH_PWM_L1
+#define PIN_PWM_L2 CH_PWM_L2
+#define PIN_PWM_R1 CH_PWM_R1
+#define PIN_PWM_R2 CH_PWM_R2
+#define HAS_VOLTAGE_DIVIDER 0
+const float VOLTAGE_DIVIDER_FACTOR = (30 + 10) / 10;
+const float VOLTAGE_MIN = 6.0f;
+const float VOLTAGE_LOW = 9.0f;
+const float VOLTAGE_MAX = 12.6f;
+const float ADC_FACTOR = 3.3 / 4095;
+#define HAS_INDICATORS 0
+#define HAS_SONAR 1
+#define SONAR_MEDIAN 0
+#define HAS_SPEED_SENSORS_FRONT 1
+#define HAS_SPEED_SENSORS_BACK 1
+#define HAS_OLED 1
+//PWM properties
+const int FREQ = 5000;
+const int RES = 8;
+const int CH_PWM_L1 = 0;
+const int CH_PWM_L2 = 1;
+const int CH_PWM_R1 = 2;
+const int CH_PWM_R2 = 3;
+const int CH_LED_LF = -1;
+const int CH_LED_RF = -1;
+const int CH_LED_LB = -1;
+const int CH_LED_RB = -1;
+const int PIN_PWM_LF1 = 0;
+const int PIN_PWM_LF2 = 1;
+const int PIN_PWM_LB1 = 0;
+const int PIN_PWM_LB2 = 1;
+const int PIN_PWM_RF1 = 2;
+const int PIN_PWM_RF2 = 3;
+const int PIN_PWM_RB1 = 2;
+const int PIN_PWM_RB2 = 3;
+const int PIN_SPEED_LF = 7;
+const int PIN_SPEED_LB = 8;
+const int PIN_SPEED_RF = 9;
+const int PIN_SPEED_RB = 10;
+const int PIN_VIN = 4;
+const int PIN_TRIGGER = 18;
+const int PIN_ECHO = 19;
+const int PIN_LED_LI = -1;
+const int PIN_LED_RI = -1;
+const int PIN_LED_LB = -1;
+const int PIN_LED_RB = -1;
+const int PIN_LED_LF = -1;
+const int PIN_LED_RF = -1;
+const int PIN_LED_Y = -1;
+const int PIN_LED_G = -1;
+const int PIN_LED_B = -1;
 #endif
 //------------------------------------------------------//
 
