@@ -727,11 +727,25 @@ unsigned int distance_estimate = -1;    //cm
 #if (HAS_OLED)
 #include <SPI.h>
 #include <Wire.h>
+// --- OLED Display Configuration ---
+// Uncomment one of the following lines to select your display type
+#define OLED_DRIVER_SSD1306 0
+#define OLED_DRIVER_SSD1312 1
+#define OLED_DRIVER_TFT 2
+#define OLED_DRIVER OLED_DRIVER_SSD1312
+
+#if (OLED_DRIVER == OLED_DRIVER_SSD1306)
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
-
 const int OLED_RESET = -1;  // not used
 Adafruit_SSD1306 display(OLED_RESET);
+
+#elif (OLED_DRIVER == OLED_DRIVER_SSD1312)
+#include <U8g2lib.h>
+U8G2_SSD1312_128X64_NONAME_F_HW_I2C display(U8G2_R0, U8X8_PIN_NONE);
+
+#elif (OLED_DRIVER == OLED_DRIVER_TFT)
+#endif
 
 // OLED Display SSD1306
 const unsigned int SCREEN_WIDTH = 128;  // OLED display width, in pixels
@@ -843,7 +857,15 @@ void setup() {
 #endif
   // Initialize with the I2C addr 0x3C
 #if (HAS_OLED)
-  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+  #if (OLED_DRIVER == OLED_DRIVER_SSD1306)
+    display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+  #elif (OLED_DRIVER == OLED_DRIVER_SSD1312)
+    Wire.setPins(5, 6);
+    display.begin();
+    display.enableUTF8Print();
+    display.clearBuffer();
+  #elif (OLED_DRIVER == OLED_DRIVER_TFT)
+  #endif    
 #endif
 #if (HAS_INDICATORS)
   pinMode(PIN_LED_LI, OUTPUT);
@@ -1647,25 +1669,44 @@ void parse_msg() {
 #if HAS_OLED
 // Function for drawing a string on the OLED display
 void drawString(String line1, String line2, String line3, String line4) {
-  display.clearDisplay();
-  // set text color
-  display.setTextColor(WHITE);
-  // set text size
-  display.setTextSize(1);
-  // set text cursor position
-  display.setCursor(1, 0);
-  // show text
-  display.println(line1);
-  display.setCursor(1, 8);
-  // show text
-  display.println(line2);
-  display.setCursor(1, 16);
-  // show text
-  display.println(line3);
-  display.setCursor(1, 24);
-  // show text
-  display.println(line4);
-  display.display();
+  #if (OLED_DRIVER == OLED_DRIVER_SSD1306)
+    display.clearDisplay();
+    // set text color
+    display.setTextColor(WHITE);
+    // set text size
+    display.setTextSize(1);
+    // set text cursor position
+    display.setCursor(1, 0);
+    // show text
+    display.println(line1);
+    display.setCursor(1, 8);
+    // show text
+    display.println(line2);
+    display.setCursor(1, 16);
+    // show text
+    display.println(line3);
+    display.setCursor(1, 24);
+    // show text
+    display.println(line4);
+    display.display();
+  #elif (OLED_DRIVER == OLED_DRIVER_SSD1312)
+    display.clearBuffer();
+    display.setFont(u8g2_font_unifont_t_chinese3);
+    // set text cursor position
+    display.setCursor(1, 12);
+    display.println(line1);
+
+    display.setCursor(1, 28);
+    display.println(line2);
+    
+    display.setCursor(1, 44);
+    display.println(line3);
+    
+    display.setCursor(1, 60);
+    display.println(line4);
+    display.sendBuffer();
+  #elif (OLED_DRIVER == OLED_DRIVER_TFT)
+  #endif
 }
 #endif
 
