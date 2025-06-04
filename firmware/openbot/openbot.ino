@@ -745,6 +745,8 @@ Adafruit_SSD1306 display(OLED_RESET);
 U8G2_SSD1312_128X64_NONAME_F_HW_I2C display(U8G2_R0, U8X8_PIN_NONE);
 
 #elif (OLED_DRIVER == OLED_DRIVER_TFT)
+#include <TFT_eSPI.h>
+TFT_eSPI display = TFT_eSPI();
 #endif
 
 // OLED Display SSD1306
@@ -865,6 +867,8 @@ void setup() {
     display.enableUTF8Print();
     display.clearBuffer();
   #elif (OLED_DRIVER == OLED_DRIVER_TFT)
+    display.init();
+    display.fillScreen(TFT_BLUE);
   #endif    
 #endif
 #if (HAS_INDICATORS)
@@ -1706,6 +1710,11 @@ void drawString(String line1, String line2, String line3, String line4) {
     display.println(line4);
     display.sendBuffer();
   #elif (OLED_DRIVER == OLED_DRIVER_TFT)
+    display.setTextColor(TFT_WHITE);
+    display.drawString(line1, 10, 10);
+    display.drawString(line2, 10, 20);
+    display.drawString(line3, 10, 30);
+    display.drawString(line4, 10, 40);
   #endif
 }
 #endif
