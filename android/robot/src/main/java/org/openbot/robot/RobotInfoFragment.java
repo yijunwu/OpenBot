@@ -23,6 +23,11 @@ public class RobotInfoFragment extends ControlsFragment {
     return binding.getRoot();
   }
 
+  @Override
+  protected boolean useBitmapVideoCapturer() {
+    return false;
+  }
+
   @SuppressLint("RestrictedApi")
   @Override
   public void onViewCreated(@NotNull View view, @Nullable Bundle savedInstanceState) {

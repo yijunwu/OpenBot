@@ -38,12 +38,17 @@ public class FreeRoamFragment extends ControlsFragment {
     return binding.getRoot();
   }
 
+  @Override
+  protected boolean useBitmapVideoCapturer() {
+    return false;
+  }
+
   @SuppressLint("RestrictedApi")
   @Override
   public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
     super.onViewCreated(view, savedInstanceState);
 
-    phoneController = PhoneController.getInstance(requireContext());
+    phoneController = PhoneController.getInstance(requireContext(), null);
 
     binding.voltageInfo.setText(getString(R.string.voltageInfo, "--.-"));
     binding.controllerContainer.speedInfo.setText(getString(R.string.speedInfo, "---,---"));
@@ -63,6 +68,7 @@ public class FreeRoamFragment extends ControlsFragment {
     binding.controllerContainer.controlMode.setOnClickListener(
         v -> {
           ControlMode controlMode = ControlMode.getByID(preferencesManager.getControlMode());
+          //TODO: need to change if we support compound control mode
           if (controlMode != null) setControlMode(Enums.switchControlMode(controlMode));
         });
     binding.controllerContainer.driveMode.setOnClickListener(
@@ -234,6 +240,13 @@ public class FreeRoamFragment extends ControlsFragment {
             connectWebController();
           }
           break;
+        case COMPOUND:
+          disconnectPhoneController();
+          binding.controllerContainer.controlMode.setImageResource(R.drawable.ic_controller_n_phone);
+          if (!PermissionUtils.hasControllerPermissions(requireActivity()))
+            requestPermissionLauncher.launch(Constants.PERMISSIONS_CONTROLLER);
+          else connectPhoneControllerForCompound();
+          break;
       }
       Timber.d("Updating  controlMode: %s", controlMode);
       preferencesManager.setControlMode(controlMode.getValue());
@@ -262,7 +275,7 @@ public class FreeRoamFragment extends ControlsFragment {
 
   private void connectPhoneController() {
     phoneController.connect(requireContext());
-    DriveMode oldDriveMode = currentDriveMode;
+    DriveMode oldDriveMode = vehicle.getDriveMode();
     // Currently only dual drive mode supported
     setDriveMode(DriveMode.DUAL);
     binding.controllerContainer.driveMode.setAlpha(0.5f);
@@ -272,12 +285,22 @@ public class FreeRoamFragment extends ControlsFragment {
 
   private void connectWebController() {
     phoneController.connectWebServer();
-    Enums.DriveMode oldDriveMode = currentDriveMode;
+    Enums.DriveMode oldDriveMode = vehicle.getDriveMode();
     // Currently only dual drive mode supported
     setDriveMode(Enums.DriveMode.GAME);
     binding.controllerContainer.driveMode.setAlpha(0.5f);
     binding.controllerContainer.driveMode.setEnabled(false);
     preferencesManager.setDriveMode(oldDriveMode.getValue());
+  }
+
+  private void connectPhoneControllerForCompound() {
+    phoneController.connect(requireContext());
+    setDriveMode(DriveMode.getByID(preferencesManager.getDriveMode()));
+    binding.controllerContainer.driveMode.setEnabled(true);
+    binding.controllerContainer.driveMode.setAlpha(1.0f);
+    //TODO: Currently no need to set driveMode to dual,
+    // will need to add another variable to save phone drive mode if we support multiple drive
+    // mode for phone controller since we now support COMPOUND control mode
   }
 
   private void disconnectPhoneController() {
@@ -312,7 +335,8 @@ public class FreeRoamFragment extends ControlsFragment {
 
       case Constants.CMD_DISCONNECTED:
         handleDriveCommand();
-        setControlMode(ControlMode.GAMEPAD);
+        disconnectPhoneController();
+        setControlMode(ControlMode.getByID(preferencesManager.getControlMode()));
         break;
 
       case Constants.CMD_SPEED_DOWN:

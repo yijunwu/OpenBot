@@ -26,7 +26,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.openbot.R;
+import org.openbot.env.BitmapFrameCapturer;
 import org.openbot.env.ImageUtils;
+import org.openbot.env.PhoneController;
 import org.openbot.utils.Constants;
 import org.openbot.utils.Enums;
 import org.openbot.utils.PermissionUtils;
@@ -79,6 +81,8 @@ public abstract class CameraFragment extends ControlsFragment {
   public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
     super.onViewCreated(view, savedInstanceState);
     cameraExecutor = Executors.newSingleThreadExecutor();
+
+    phoneController = PhoneController.getInstance(requireContext(), videoCapturer);
   }
 
   @SuppressLint("RestrictedApi")
@@ -129,6 +133,13 @@ public abstract class CameraFragment extends ControlsFragment {
           converter.yuvToRgb(image.getImage(), bitmapBuffer);
           image.close();
 
+          if (videoCapturer instanceof BitmapFrameCapturer) {
+            BitmapFrameCapturer bitmapFrameCapturer = (BitmapFrameCapturer)videoCapturer;
+
+            if (bitmapFrameCapturer.capturerObserver != null && bitmapFrameCapturer.active) {
+              bitmapFrameCapturer.pushBitmap(bitmapBuffer, 270);
+            }
+          }
           processFrame(bitmapBuffer, image);
         });
     try {
@@ -191,6 +202,11 @@ public abstract class CameraFragment extends ControlsFragment {
       else this.analyserResolution = resolutionSize;
     }
     bindCameraUseCases();
+  }
+
+  @Override
+  protected boolean useBitmapVideoCapturer() {
+    return true;
   }
 
   protected abstract void processFrame(Bitmap image, ImageProxy imageProxy);

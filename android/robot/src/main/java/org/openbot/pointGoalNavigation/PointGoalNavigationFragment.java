@@ -63,6 +63,11 @@ public class PointGoalNavigationFragment extends ControlsFragment implements ArC
   }
 
   @Override
+  protected boolean useBitmapVideoCapturer() {
+    return false;
+  }
+
+  @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     if (getArguments() != null) {}

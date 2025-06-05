@@ -1,5 +1,6 @@
 package org.openbot.common;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -26,6 +27,7 @@ import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.openbot.R;
 import org.openbot.env.AudioPlayer;
+import org.openbot.env.BitmapFrameCapturer;
 import org.openbot.env.BotToControllerEventBus;
 import org.openbot.env.ControllerToBotEventBus;
 import org.openbot.env.PhoneController;
@@ -42,6 +44,12 @@ import org.openbot.utils.FormatUtils;
 import org.openbot.utils.PermissionUtils;
 import org.openbot.vehicle.Control;
 import org.openbot.vehicle.Vehicle;
+import org.webrtc.Camera1Enumerator;
+import org.webrtc.Camera2Enumerator;
+import org.webrtc.CameraEnumerator;
+import org.webrtc.CameraVideoCapturer;
+import org.webrtc.VideoCapturer;
+
 import timber.log.Timber;
 
 public abstract class ControlsFragment extends Fragment implements ServerListener {
@@ -52,7 +60,7 @@ public abstract class ControlsFragment extends Fragment implements ServerListene
   protected Animation startAnimation;
   protected SharedPreferencesManager preferencesManager;
   protected PhoneController phoneController;
-  protected Enums.DriveMode currentDriveMode = Enums.DriveMode.GAME;
+  //protected Enums.DriveMode currentDriveMode = Enums.DriveMode.GAME;
 
   protected AudioPlayer audioPlayer;
 
@@ -65,6 +73,73 @@ public abstract class ControlsFragment extends Fragment implements ServerListene
   private ArrayAdapter<String> serverAdapter;
   private Spinner modelSpinner;
   private Spinner serverSpinner;
+
+  protected VideoCapturer videoCapturer;
+
+  protected abstract boolean useBitmapVideoCapturer();
+
+  protected VideoCapturer createVideoCapturer() {
+    VideoCapturer videoCapturer;
+    Context context = requireContext();
+    if (useBitmapVideoCapturer()) {
+      videoCapturer = new BitmapFrameCapturer();
+    } else {
+      if (useCamera2(context)) {
+        videoCapturer = createCameraCapturer(new Camera2Enumerator(context), true);
+      } else {
+        videoCapturer = createCameraCapturer(new Camera1Enumerator(true), true);
+      }
+    }
+    return videoCapturer;
+  }
+
+
+  private VideoCapturer createCameraCapturer(CameraEnumerator enumerator, Boolean useFrontCamera) {
+    final String[] deviceNames = enumerator.getDeviceNames();
+    for (int i = deviceNames.length - 1; i >= 0; i--) {
+      String deviceName = deviceNames[i];
+      if (enumerator.isFrontFacing(deviceName) == useFrontCamera || useFrontCamera == null) {
+        VideoCapturer videoCapturer = enumerator.createCapturer(deviceName, new CameraVideoCapturer.CameraEventsHandler() {
+          @Override
+          public void onCameraError(String s) {
+            Log.d("CameraEventHandler", "Camera error: " + s);
+          }
+
+          @Override
+          public void onCameraDisconnected() {
+            Log.d("CameraEventHandler", "Camera disconnected");
+          }
+
+          @Override
+          public void onCameraFreezed(String s) {
+            Log.d("CameraEventHandler", "Camera freezed: " + s);
+          }
+
+          @Override
+          public void onCameraOpening(String s) {
+            Log.d("CameraEventHandler", "Camera opening: " + s);
+          }
+
+          @Override
+          public void onFirstFrameAvailable() {
+          }
+
+          @Override
+          public void onCameraClosed() {
+            Log.d("CameraEventHandler", "Camera closed");
+          }
+        });
+        if (videoCapturer != null) {
+          return videoCapturer;
+        }
+      }
+    }
+    return null;
+  }
+
+  private boolean useCamera2(Context context) {
+    return Camera2Enumerator.isSupported(context);
+  }
 
   @Override
   public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -80,7 +155,8 @@ public abstract class ControlsFragment extends Fragment implements ServerListene
         .getWindow()
         .addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-    phoneController = PhoneController.getInstance(requireContext());
+    videoCapturer = createVideoCapturer();
+    phoneController = PhoneController.getInstance(requireContext(), videoCapturer);
 
     audioPlayer = new AudioPlayer(requireContext());
     masterList = FileUtils.loadConfigJSONFromAsset(requireActivity());
@@ -186,8 +262,7 @@ public abstract class ControlsFragment extends Fragment implements ServerListene
   }
 
   protected void processKeyEvent(KeyEvent keyCode) {
-    if (Enums.ControlMode.getByID(preferencesManager.getControlMode())
-        == Enums.ControlMode.GAMEPAD) {
+    if (isGamepadControlEnabled()) {
       switch (keyCode.getKeyCode()) {
         case KeyEvent.KEYCODE_BUTTON_X: // square
           toggleIndicatorEvent(Enums.VehicleIndicator.LEFT.getValue());
@@ -233,6 +308,11 @@ public abstract class ControlsFragment extends Fragment implements ServerListene
     }
   }
 
+  private boolean isGamepadControlEnabled() {
+    Enums.ControlMode controlMode = Enums.ControlMode.getByID(preferencesManager.getControlMode());
+    return controlMode == Enums.ControlMode.GAMEPAD || controlMode == Enums.ControlMode.COMPOUND;
+  }
+
   private void handlePhoneControllerEvents() {
     ControllerToBotEventBus.subscribe(
         this.getClass().getSimpleName(),
@@ -256,6 +336,7 @@ public abstract class ControlsFragment extends Fragment implements ServerListene
             case Constants.CMD_DRIVE:
               JSONObject driveValue = event.getJSONObject("driveCmd");
 
+              // TODO: this is the code to control vehicle via phone controller, see whether we need to change it to support COMPOUND control mode
               vehicle.setControl(
                   new Control(
                       Float.parseFloat(driveValue.getString("l")),
@@ -282,7 +363,7 @@ public abstract class ControlsFragment extends Fragment implements ServerListene
               // That is why we are not calling phoneController.send() here directly.
               BotToControllerEventBus.emitEvent(
                   ConnectionUtils.getStatus(
-                      false, false, false, currentDriveMode.toString(), vehicle.getIndicator()));
+                      false, false, false, vehicle.getDriveMode().toString(), vehicle.getIndicator()));
               break;
 
             case Constants.CMD_DISCONNECTED:

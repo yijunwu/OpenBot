@@ -168,7 +168,9 @@ public class NetworkServiceConnection implements ILocalConnection {
       @Override
       public void onStartDiscoveryFailed(String serviceType, int errorCode) {
         e(TAG, "Discovery failed: Error code: %s", errorCode);
-        mNsdManager.stopServiceDiscovery(this);
+        try {
+          mNsdManager.stopServiceDiscovery(this);
+        } catch (Exception ignored) {}
 
         // re-try connecting
         runConnection();
@@ -177,7 +179,9 @@ public class NetworkServiceConnection implements ILocalConnection {
       @Override
       public void onStopDiscoveryFailed(String serviceType, int errorCode) {
         e("Discovery failed: Error code:%s", errorCode);
-        mNsdManager.stopServiceDiscovery(this);
+        try {
+          mNsdManager.stopServiceDiscovery(this);
+        } catch (Exception ignored) {}
       }
     };
   }
@@ -192,7 +196,8 @@ public class NetworkServiceConnection implements ILocalConnection {
           Timber.e("serivce = %s", serviceInfo);
 
           // re-try connecting
-          runConnection();
+          //runConnection();
+          mNsdManager.resolveService(serviceInfo, this);
         }
 
         @Override
@@ -208,6 +213,21 @@ public class NetworkServiceConnection implements ILocalConnection {
           String host = serviceInfo.getHost().getHostAddress();
           Timber.d("PORT: " + port + ", address: " + host);
 
+          SocketHandler.ClientInfo clientInfo = socketHandler.connect(host, port);
+          if (clientInfo == null) {
+            Timber.d("Could not get a connection. Rerun connection");
+            try {
+              Thread.sleep(100L);
+            } catch (Exception ignored) {}
+
+            serviceInfo.setHost(null);
+            serviceInfo.setPort(0);
+            serviceInfo.setServiceName(SERVICE_NAME_CONTROLLER);
+            serviceInfo.setServiceType(SERVICE_TYPE);
+            mNsdManager.resolveService(serviceInfo, this);
+            return;
+          }
+
           ((Activity) context)
               .runOnUiThread(
                   () -> {
@@ -216,11 +236,7 @@ public class NetworkServiceConnection implements ILocalConnection {
 
           new Thread("Receiver Thread") {
             public void run() {
-              SocketHandler.ClientInfo clientInfo = socketHandler.connect(host, port);
-              if (clientInfo == null) {
-                Timber.d("Could not get a connection");
-                return;
-              }
+
               startReceiver(socketHandler, clientInfo.reader);
               startSender(socketHandler, clientInfo.writer);
             }

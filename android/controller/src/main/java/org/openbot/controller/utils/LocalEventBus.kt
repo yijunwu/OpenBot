@@ -70,5 +70,8 @@ object LocalEventBus {
         object Unmute : ProgressEvents()
         object Mirror : ProgressEvents()
         object Unmirror : ProgressEvents()
+        object GameDriveMode : ProgressEvents()
+        object DualDriveMode : ProgressEvents()
+        object JoystickDriveMode : ProgressEvents()
     }
 }
