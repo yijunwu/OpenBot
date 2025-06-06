@@ -55,7 +55,7 @@
 //------------------------------------------------------//
 
 // Setup the OpenBot version (DIY, PCB_V1, PCB_V2, RTR_TT, RC_CAR, LITE, RTR_TT2, RTR_520, DIY_ESP32)
-#define OPENBOT DIY_ESP32C3
+#define OPENBOT DIY_ESP32
 
 //------------------------------------------------------//
 // SETTINGS - Global settings
@@ -480,7 +480,7 @@ const int RHS_PWM_OUT = 1;
 const String robot_type = "DIY_ESP32";
 #define MCU ESP32
 #include <esp_wifi.h>
-#define HAS_BLUETOOTH 1
+#define HAS_BLUETOOTH 0
 #define analogWrite ledcWrite
 #define attachPinChangeInterrupt attachInterrupt
 #define detachPinChangeInterrupt detachInterrupt
@@ -495,10 +495,11 @@ const float VOLTAGE_MIN = 6.0f;
 const float VOLTAGE_LOW = 9.0f;
 const float VOLTAGE_MAX = 12.6f;
 const float ADC_FACTOR = 3.3 / 4095;
-#define HAS_INDICATORS 1
+#define HAS_INDICATORS 0
 #define HAS_SONAR 1
 #define SONAR_MEDIAN 0
 #define HAS_SPEED_SENSORS_FRONT 1
+#define HAS_OLED 1
 //PWM properties
 const int FREQ = 5000;
 const int RES = 8;
@@ -657,12 +658,12 @@ class MyServerCallbacks : public BLEServerCallbacks {
 
     // bleServer->updateConnParams(param->connect.remote_bda, minInterval, maxInterval, latency, timeout);
 
-    Serial.println("BT Connected");
+    Serial.println(F("BT Connected"));
   };
 
   void onDisconnect(BLEServer *bleServer) {
     deviceConnected = false;
-    Serial.println("BT Disconnected");
+    Serial.println(F("BT Disconnected"));
   }
 };
 
@@ -732,7 +733,7 @@ unsigned int distance_estimate = -1;    //cm
 #define OLED_DRIVER_SSD1306 0
 #define OLED_DRIVER_SSD1312 1
 #define OLED_DRIVER_TFT 2
-#define OLED_DRIVER OLED_DRIVER_SSD1312
+#define OLED_DRIVER OLED_DRIVER_TFT
 
 #if (OLED_DRIVER == OLED_DRIVER_SSD1306)
 #include <Adafruit_GFX.h>
