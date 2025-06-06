@@ -489,7 +489,7 @@ const String robot_type = "DIY_ESP32";
 #define PIN_PWM_L2 CH_PWM_L2
 #define PIN_PWM_R1 CH_PWM_R1
 #define PIN_PWM_R2 CH_PWM_R2
-#define HAS_VOLTAGE_DIVIDER 1
+#define HAS_VOLTAGE_DIVIDER 0
 const float VOLTAGE_DIVIDER_FACTOR = (30 + 10) / 10;
 const float VOLTAGE_MIN = 6.0f;
 const float VOLTAGE_LOW = 9.0f;
@@ -524,8 +524,8 @@ const int PIN_SPEED_LB = 34;
 const int PIN_SPEED_RF = 22;
 const int PIN_SPEED_RB = 23;
 const int PIN_VIN = 4;
-const int PIN_TRIGGER = 5;
-const int PIN_ECHO = 18;
+const int PIN_TRIGGER = 25;
+const int PIN_ECHO = 26;
 const int PIN_LED_LI = 5;
 const int PIN_LED_RI = 18;
 const int PIN_LED_LB = 5;
@@ -534,7 +534,7 @@ const int PIN_LED_LF = 19;
 const int PIN_LED_RF = 21;
 const int PIN_LED_Y = 14;
 const int PIN_LED_G = 27;
-const int PIN_LED_B = 26;
+const int PIN_LED_B = -1;
 
 //-------------------------DIY_ESP32C3----------------------//
 #elif (OPENBOT == DIY_ESP32C3)
