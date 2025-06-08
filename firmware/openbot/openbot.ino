@@ -55,7 +55,7 @@
 //------------------------------------------------------//
 
 // Setup the OpenBot version (DIY, PCB_V1, PCB_V2, RTR_TT, RC_CAR, LITE, RTR_TT2, RTR_520, DIY_ESP32)
-#define OPENBOT DIY_ESP32
+#define OPENBOT DIY_ESP32C3
 
 //------------------------------------------------------//
 // SETTINGS - Global settings
@@ -557,10 +557,10 @@ const float VOLTAGE_LOW = 9.0f;
 const float VOLTAGE_MAX = 12.6f;
 const float ADC_FACTOR = 3.3 / 4095;
 #define HAS_INDICATORS 0
-#define HAS_SONAR 1
+#define HAS_SONAR 0
 #define SONAR_MEDIAN 0
-#define HAS_SPEED_SENSORS_FRONT 1
-#define HAS_SPEED_SENSORS_BACK 1
+#define HAS_SPEED_SENSORS_FRONT 0
+#define HAS_SPEED_SENSORS_BACK 0
 #define HAS_OLED 1
 //PWM properties
 const int FREQ = 5000;
@@ -586,8 +586,8 @@ const int PIN_SPEED_LB = 8;
 const int PIN_SPEED_RF = 9;
 const int PIN_SPEED_RB = 10;
 const int PIN_VIN = 4;
-const int PIN_TRIGGER = 18;
-const int PIN_ECHO = 19;
+const int PIN_TRIGGER = -1;
+const int PIN_ECHO = -1;
 const int PIN_LED_LI = -1;
 const int PIN_LED_RI = -1;
 const int PIN_LED_LB = -1;
@@ -658,12 +658,12 @@ class MyServerCallbacks : public BLEServerCallbacks {
 
     // bleServer->updateConnParams(param->connect.remote_bda, minInterval, maxInterval, latency, timeout);
 
-    Serial.println(F("BT Connected"));
+    Serial.println("BT Connected");
   };
 
   void onDisconnect(BLEServer *bleServer) {
     deviceConnected = false;
-    Serial.println(F("BT Disconnected"));
+    Serial.println("BT Disconnected");
   }
 };
 
@@ -733,7 +733,7 @@ unsigned int distance_estimate = -1;    //cm
 #define OLED_DRIVER_SSD1306 0
 #define OLED_DRIVER_SSD1312 1
 #define OLED_DRIVER_TFT 2
-#define OLED_DRIVER OLED_DRIVER_TFT
+#define OLED_DRIVER OLED_DRIVER_SSD1312
 
 #if (OLED_DRIVER == OLED_DRIVER_SSD1306)
 #include <Adafruit_GFX.h>
@@ -985,7 +985,15 @@ void setup() {
   pinMode(PIN_DIR_R, LOW);
 #endif
 
+  #if ARDUINO_USB_CDC_ON_BOOT
+  // 当 "USB CDC on Boot" 启用时，Serial 是 HWCDC
+  // 使用单参数版本
+  Serial.begin(115200);
+  #else
+  // 当 "USB CDC on Boot" 禁用时，Serial 是 HardwareSerial
+  // 可以使用双参数版本
   Serial.begin(115200, SERIAL_8N1);
+  #endif
   // SERIAL_8E1 - 8 data bits, even parity, 1 stop bit
   // SERIAL_8O1 - 8 data bits, odd parity, 1 stop bit
   // SERIAL_8N1 - 8 data bits, no parity, 1 stop bit
@@ -1733,8 +1741,8 @@ void display_vehicle_data() {
   String left_rpm_str = String("Left RPM:  ") + String(rpm_left, 0);
   String right_rpm_str = String("Right RPM:  ") + String(rpm_right, 0);
 #else
-  String left_rpm_str = String("Left RPM:  ") + String("N/A");
-  String right_rpm_str = String("Right RPM:  ") + String("N/A");
+  String left_rpm_str = String("Left Ctrl:  ") + String(ctrl_left);
+  String right_rpm_str = String("Right Ctrl:  ") + String(ctrl_right);
 #endif
 #if HAS_SONAR
   String distance_str = String("Distance:   ") + String(distance_estimate);

@@ -18,6 +18,11 @@ import android.widget.Toast;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import com.felhr.usbserial.UsbSerialDevice;
 import com.felhr.usbserial.UsbSerialInterface;
+import com.hoho.android.usbserial.driver.CdcAcmSerialDriver;
+import com.hoho.android.usbserial.driver.ProbeTable;
+import com.hoho.android.usbserial.driver.UsbSerialDriver;
+import com.hoho.android.usbserial.driver.UsbSerialPort;
+import com.hoho.android.usbserial.driver.UsbSerialProber;
 import java.io.UnsupportedEncodingException;
 import java.util.Map;
 import org.openbot.env.Logger;
@@ -89,7 +94,7 @@ public class UsbConnection {
               if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
                 if (usbDevice != null) {
                   // call method to set up device communication
-                  startSerialConnection(usbDevice);
+                  startSerialConnection(usbDevice, null);
                 }
               } else {
                 LOGGER.d("Permission denied for device " + usbDevice);
@@ -110,7 +115,7 @@ public class UsbConnection {
         }
       };
 
-  public boolean startUsbConnection() {
+  public boolean startUsbConnection(Context applicationContext) {
     IntentFilter localIntentFilter = new IntentFilter();
     localIntentFilter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
     localIntentFilter.addAction(ACTION_USB_PERMISSION);
@@ -124,7 +129,15 @@ public class UsbConnection {
         // USB_PRODUCT_ID) {
         LOGGER.i("Device found: " + usbDevice.getDeviceName());
         if (usbManager.hasPermission(usbDevice)) {
-          return startSerialConnection(usbDevice);
+          boolean serialConnection = startSerialConnection(usbDevice, applicationContext);
+          if (applicationContext != null) {
+            Toast.makeText(
+                            applicationContext,
+                            "startSerialConnection returns " + serialConnection,
+                            Toast.LENGTH_SHORT)
+                    .show();
+          }
+          return serialConnection;
         } else {
           usbManager.requestPermission(usbDevice, usbPermissionIntent);
           Toast.makeText(context, "Please allow USB Host connection.", Toast.LENGTH_SHORT).show();
@@ -137,10 +150,20 @@ public class UsbConnection {
     return false;
   }
 
-  private boolean startSerialConnection(UsbDevice device) {
+  private boolean startSerialConnection(UsbDevice device, Context applicationContext) {
     LOGGER.i("Ready to open USB device connection");
     connection = usbManager.openDevice(device);
     serialDevice = UsbSerialDevice.createUsbSerialDevice(device, connection);
+    if (serialDevice == null) {
+      serialDevice = UsbSerialDeviceAdapter.create(device, connection);
+    }
+    if (serialDevice == null && applicationContext != null) {
+      Toast.makeText(
+                      applicationContext,
+                      "Could not create Usb Serial Device",
+                      Toast.LENGTH_SHORT)
+              .show();
+    }
     boolean success = false;
     if (serialDevice != null) {
       if (serialDevice.open()) {
@@ -162,9 +185,74 @@ public class UsbConnection {
       }
     } else {
       LOGGER.w("Could not create Usb Serial Device");
+
+//      // 2. 使用 UsbSerialProber 查找合适的驱动
+//      // UsbSerialProber prober = UsbSerialProber.getDefaultProber(); // 旧版用法
+//      UsbSerialDriver driver = UsbSerialProber.getDefaultProber().probeDevice(device);
+//
+//      if (driver == null) {
+//        // 探测器也找不到合适的驱动，可能是非常特殊的设备
+//        // 在这里你可以尝试方案二
+//        driver = getCustomDriver(device);
+//      }
+//      if (applicationContext != null) {
+//        Toast.makeText(
+//                        applicationContext,
+//                        "probeDevice returns " + driver,
+//                        Toast.LENGTH_SHORT)
+//                .show();
+//      }
+//      UsbSerialPort port = driver.getPorts().get(0);
+//      if (applicationContext != null) {
+//        Toast.makeText(
+//                        applicationContext,
+//                        "port: " + port,
+//                        Toast.LENGTH_SHORT)
+//                .show();
+//      }
+//      try {
+//        port.open(connection);
+//        //port.setParameters(115200, 8, UsbSerialPort.STOPBITS_1, UsbSerialPort.PARITY_NONE);
+//
+//        // 到这里，串口就成功打开了！
+//        // 你现在可以通过 port.read(...) 和 port.write(...) 来读写数据
+//        byte[] data = new byte[1000];
+//        int len = port.read(data, 100);
+//        if (applicationContext != null) {
+//          Toast.makeText(
+//                          applicationContext,
+//                          "Data read, length: " + len,
+//                          Toast.LENGTH_SHORT)
+//                  .show();
+//        }
+//      } catch (Exception e) {
+//        if (applicationContext != null) {
+//          Toast.makeText(
+//                          applicationContext,
+//                          "Exception : " + e,
+//                          Toast.LENGTH_SHORT)
+//                  .show();
+//        }
+//      }
     }
+
     return success;
   }
+
+//  private UsbSerialDriver getCustomDriver(UsbDevice device) {
+//    // 1. 创建一个自定义探测表
+//    ProbeTable customTable = new ProbeTable();
+//
+//    // 2. 将你的 ESP32-C3 的 VID 和 PID 添加到表中，并指定使用 CdcAcmSerialDriver
+//    // ESP32-C3 的 VID: 0x303A, PID: 0x1001
+//    customTable.addProduct(0x1A86, 0x7522, CdcAcmSerialDriver.class);
+//
+//    // 3. 使用这个自定义表创建一个探测器
+//    UsbSerialProber prober = new UsbSerialProber(customTable);
+//
+//    // 4. 用这个探测器来探测你的设备
+//    return prober.probeDevice(device);
+//  }
 
   private void onSerialDataReceived(String data) {
     // Add whatever you want here
