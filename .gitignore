@@ -17,3 +17,5 @@ wandb/
 # build
 /bin
 /node_modules/
+android/robot/.cxx/Debug/
+android/robot/.cxx/

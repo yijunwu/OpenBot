@@ -6,6 +6,12 @@
     android:layout_height="match_parent"
     tools:context=".objectNav.ObjectNavFragment">
 
+    <TextView
+        android:id="@+id/textView2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="android:layout_width=&quot;match_parent&quot;&#xA;                    android:layout_height=&quot;80dp&quot;" />
+
     <org.openbot.customview.OverlayView
         android:id="@+id/tracking_overlay"
         android:layout_width="match_parent"
@@ -58,6 +64,14 @@
                 android:layout_marginStart="4dp"
                 android:layout_marginTop="4dp"
                 android:text="@string/dynamic_speed" />
+
+            <CheckBox
+                android:id="@+id/byteTrackToggle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_marginTop="4dp"
+                android:button="@drawable/mirror_control" />
 
         </LinearLayout>
 
@@ -304,6 +318,7 @@
                     android:textColor="@android:color/black" />
 
                 <LinearLayout
+                    android:id="@+id/linearLayout2"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="1"
@@ -337,7 +352,13 @@
                         android:contentDescription="@string/plus"
                         android:src="@drawable/ic_baseline_add" />
                 </LinearLayout>
-
+                <!-- 在原有 LinearLayout 下方添加 -->
+                <include
+                    android:id="@+id/chatListContainer"
+                    layout="@layout/chat_list"
+                    android:layout_width="match_parent"
+                    android:layout_height="180dp"
+                    />
             </LinearLayout>
 
             <LinearLayout
@@ -350,7 +371,7 @@
         </LinearLayout>
         <include
             android:id="@+id/controllerContainer"
-            layout="@layout/control_buttons" />
+            layout="@layout/control_buttons"/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

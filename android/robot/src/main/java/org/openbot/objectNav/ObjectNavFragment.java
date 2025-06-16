@@ -7,6 +7,7 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.graphics.Typeface;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -22,12 +23,19 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageProxy;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.Navigation;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
 import org.jetbrains.annotations.NotNull;
 import org.openbot.R;
 import org.openbot.common.CameraFragment;
@@ -38,12 +46,17 @@ import org.openbot.tflite.Detector;
 import org.openbot.tflite.Model;
 import org.openbot.tflite.Network;
 import org.openbot.tracking.MultiBoxTracker;
+import org.openbot.ui.ChatViewModel;
 import org.openbot.utils.CameraUtils;
 import org.openbot.utils.Constants;
 import org.openbot.utils.Enums;
 import org.openbot.utils.MovingAverage;
 import org.openbot.utils.PermissionUtils;
 import org.openbot.vehicle.Control;
+import org.openbot.vehicle.ScriptExecutor;
+
+import androidx.recyclerview.widget.RecyclerView;
+
 import timber.log.Timber;
 
 public class ObjectNavFragment extends CameraFragment {
@@ -57,7 +70,6 @@ public class ObjectNavFragment extends CameraFragment {
   private static final float TEXT_SIZE_DIP = 10;
 
   private Detector detector;
-
   private boolean mirrorControl;
   private Matrix frameToCropTransform;
   private Bitmap croppedBitmap;
@@ -74,6 +86,10 @@ public class ObjectNavFragment extends CameraFragment {
 
   private long lastProcessingTimeMs = -1;
   private long frameNum = 0;
+
+  private ChatViewModel chatViewModel;
+
+  private ScriptExecutor scriptExecutor;
 
   private final boolean isBenchmarkMode = false;
   private long processedFrames = 0;
@@ -97,6 +113,56 @@ public class ObjectNavFragment extends CameraFragment {
   @Override
   public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
     super.onViewCreated(view, savedInstanceState);
+
+    // 初始化 ViewModel
+    chatViewModel = new ViewModelProvider(this).get(ChatViewModel.class);
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+      chatViewModel.initialize(null, null);  // 调用初始化逻辑
+    } else {
+      throw new UnsupportedOperationException();
+    }
+
+    scriptExecutor= new ScriptExecutor(vehicle);
+
+    // 初始化 RecyclerView
+    View chatContainer = view.findViewById(R.id.chatListContainer);
+    if (chatContainer != null) {
+        // 通过容器获取 RecyclerView
+        RecyclerView chatRecyclerView = chatContainer.findViewById(R.id.chatRecyclerView);
+        if (chatRecyclerView != null) {
+            ArrayList<String> messages = new ArrayList<>();
+            messages.add("用户: 跳个蜜蜂的8字舞吧");
+            messages.add("小车: 好的，我是一只小蜜蜂，我跳一个8字舞");
+            ChatAdapter adapter = new ChatAdapter();
+            chatRecyclerView.setAdapter(adapter);
+
+            chatViewModel.getMessages().observe(getViewLifecycleOwner(), list -> {
+                adapter.submitList(list, () -> {
+                    chatRecyclerView.post(() -> chatRecyclerView.scrollToPosition(adapter.getItemCount() - 1));
+                });
+            });
+
+            adapter.submitList(messages);
+
+            chatViewModel.getScript().observe(getViewLifecycleOwner(), script -> {
+                List<String> currentList = adapter.getCurrentList();
+                List<String> newList = new ArrayList<>(currentList);
+                newList.add(script);
+                adapter.submitList(newList);
+                executeScript(script);
+            });
+
+        }
+    }
+
+    // 观察 ViewModel 数据变化
+//    chatViewModel.getMessages().observe(getViewLifecycleOwner(), new Observer<List<String>>() {
+//      @Override
+//      public void onChanged(List<String> messages) {
+//        adapter.setMessages(messages);
+//        adapter.notifyDataSetChanged();
+//      }
+//    });
 
     binding.confidenceValue.setText((int) (MINIMUM_CONFIDENCE_TF_OD_API * 100) + "%");
 
@@ -149,11 +215,13 @@ public class ObjectNavFragment extends CameraFragment {
 
     binding.mirrorControl.setOnClickListener(v -> mirrorControl());
 
+    binding.byteTrackToggle.setOnClickListener(v -> binding.byteTrackToggle.setChecked(binding.byteTrackToggle.isChecked()));
+
     List<String> models =
         getModelNames(f -> f.type.equals(Model.TYPE.DETECTOR) && f.pathType != Model.PATH_TYPE.URL);
     initModelSpinner(binding.modelSpinner, models, preferencesManager.getObjectNavModel());
 
-    setAnalyserResolution(Enums.Preview.HD.getValue());
+    setAnalyserResolution(Enums.Preview.HD_4_3.getValue());
     binding.deviceSpinner.setOnItemSelectedListener(
         new AdapterView.OnItemSelectedListener() {
           @Override
@@ -236,9 +304,90 @@ public class ObjectNavFragment extends CameraFragment {
         });
   }
 
-  private void mirrorControl() {
+  private void executeScript(String script) {
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+          CompletableFuture<Void> future = scriptExecutor.executeScriptAsync(script);
+          try {
+              future.get(100, TimeUnit.SECONDS);
+          } catch (Exception e) {
+              Timber.e(e,"Exception encountered when executing script %s", script);
+          }
+      }
+  }
+
+  Integer time = 0;
+
+  private void mirrorControl2() {
+    //executeScript("rotate(360, 0.2, clock-wise, forward, 0.2)");
+    //executeScript("rotate(360, 0.2, counter-clockwise, forward, 0.2)");
+    //executeScript("rotate(360, 0.2, clock-wise, backward, 0.2)");
+    //executeScript("rotate(360, 0.2, counter-clockwise, backward, 0.2)");
+    time ++;
+    // 初始化 RecyclerView
+    View chatContainer = this.getView().findViewById(R.id.chatListContainer);
+    // 通过容器获取 RecyclerView
+    RecyclerView chatRecyclerView = chatContainer.findViewById(R.id.chatRecyclerView);
+    if (chatRecyclerView != null) {
+      ArrayList<String> messages = new ArrayList<>();
+      messages.add("Current control: " + time * 0.1 + ", lasting 3000ms");
+      ChatAdapter adapter = (ChatAdapter) chatRecyclerView.getAdapter();
+      adapter.submitList(messages);
+    }
+    try {
+      Thread.sleep(3000);
+      vehicle.setControl((float)(time * 0.1), (float)(time * 0.1));
+      Thread.sleep(3000);
+      vehicle.setControl(0.0F, 0.0F);
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+
     mirrorControl = !mirrorControl;
   }
+
+  private void mirrorControl() {
+      mirrorControl = !mirrorControl;
+  }
+
+  private void mirrorControl3() {
+        //executeScript("rotate(360, 0.2, clock-wise, forward, 0.2)");
+        //executeScript("rotate(360, 0.2, counter-clockwise, forward, 0.2)");
+        //executeScript("rotate(360, 0.2, clock-wise, backward, 0.2)");
+        //executeScript("rotate(360, 0.2, counter-clockwise, backward, 0.2)");
+
+        // 初始化 RecyclerView
+        View chatContainer = this.getView().findViewById(R.id.chatListContainer);
+        // 通过容器获取 RecyclerView
+        RecyclerView chatRecyclerView = chatContainer.findViewById(R.id.chatRecyclerView);
+        if (chatRecyclerView != null) {
+            ArrayList<String> messages = new ArrayList<>();
+            Integer speed = 180;
+            if (binding.dynamicSpeed.isChecked())
+                speed = 360;
+            String cmd;
+            //if (time == 0)
+            //    cmd = "rotate(360, 0.215, clock-wise, forward, 180)";
+            //else if (time == 1)
+            int radiusTimes = time / 1 ;
+            cmd = "rotate(360, " + 0.025 * radiusTimes + ", clockwise, forward, " + 60 * (time % 1 + 3) +")";
+            //cmd = "rotate(360, 0.2, clockwise, forward, " + 60 * (time % 5 + 2) + ")";
+            //else
+            //    cmd = "rotate(360, " + 0.1 / 4 * time + ", clock-wise, forward, " + speed + ")";
+            messages.add(cmd);
+            ChatAdapter adapter = (ChatAdapter) chatRecyclerView.getAdapter();
+            adapter.submitList(messages);
+            try {
+                Thread.sleep(2000);
+                executeScript(cmd);
+                //Thread.sleep(1000);
+                //vehicle.setControl(0.0F, 0.0F);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        time ++;
+        mirrorControl = !mirrorControl;
+    }
 
   private void updateCropImageInfo() {
     //    Timber.i("%s x %s",getPreviewSize().getWidth(), getPreviewSize().getHeight());
@@ -490,8 +639,9 @@ public class ObjectNavFragment extends CameraFragment {
                 }
               }
 
-              tracker.trackResults(mappedRecognitions, frameNum);
-              Control target = tracker.updateTarget();
+              boolean byteTrack = binding.byteTrackToggle.isChecked();
+              tracker.trackResults(mappedRecognitions, frameNum, true);
+              Control target = tracker.updateTarget(byteTrack);
               if (mirrorControl) {
                 handleDriveCommand(target.mirror());
               } else {

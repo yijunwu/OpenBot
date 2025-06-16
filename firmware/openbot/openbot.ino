@@ -669,7 +669,7 @@ class MyServerCallbacks : public BLEServerCallbacks {
 
 class MyCallbacks : public BLECharacteristicCallbacks {
   void onWrite(BLECharacteristic *pCharacteristic) {
-    std::string bleReceiver = pCharacteristic->getValue();
+    String bleReceiver = pCharacteristic->getValue();
     if (bleReceiver.length() > 0) {
       for (int i = 0; i < bleReceiver.length(); i++) {
         on_ble_rx(bleReceiver[i]);
@@ -730,20 +730,21 @@ unsigned int distance_estimate = -1;    //cm
 #include <Wire.h>
 // --- OLED Display Configuration ---
 // Uncomment one of the following lines to select your display type
-#define OLED_DRIVER_SSD1306 0
-#define OLED_DRIVER_SSD1312 1
+#define OLED_DRIVER_ADAFRUIT 0
+#define OLED_DRIVER_U8G2 1
 #define OLED_DRIVER_TFT 2
-#define OLED_DRIVER OLED_DRIVER_SSD1312
+#define OLED_DRIVER OLED_DRIVER_U8G2
 
-#if (OLED_DRIVER == OLED_DRIVER_SSD1306)
+#if (OLED_DRIVER == OLED_DRIVER_ADAFRUIT)
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 const int OLED_RESET = -1;  // not used
 Adafruit_SSD1306 display(OLED_RESET);
 
-#elif (OLED_DRIVER == OLED_DRIVER_SSD1312)
+#elif (OLED_DRIVER == OLED_DRIVER_U8G2)
 #include <U8g2lib.h>
 U8G2_SSD1312_128X64_NONAME_F_HW_I2C display(U8G2_R0, U8X8_PIN_NONE);
+//U8G2_SSD1306_72X40_ER_1_SW_I2C display(U8G2_R0,6,5,U8X8_PIN_NONE);
 
 #elif (OLED_DRIVER == OLED_DRIVER_TFT)
 #include <TFT_eSPI.h>
@@ -752,7 +753,8 @@ TFT_eSPI display = TFT_eSPI();
 
 // OLED Display SSD1306
 const unsigned int SCREEN_WIDTH = 128;  // OLED display width, in pixels
-const unsigned int SCREEN_HEIGHT = 32;  // OLED display height, in pixels
+const unsigned int SCREEN_HEIGHT = 64;  // OLED display height, in pixels
+
 #endif
 
 //Vehicle Control
@@ -860,9 +862,9 @@ void setup() {
 #endif
   // Initialize with the I2C addr 0x3C
 #if (HAS_OLED)
-  #if (OLED_DRIVER == OLED_DRIVER_SSD1306)
+  #if (OLED_DRIVER == OLED_DRIVER_ADAFRUIT)
     display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
-  #elif (OLED_DRIVER == OLED_DRIVER_SSD1312)
+  #elif (OLED_DRIVER == OLED_DRIVER_U8G2)
     Wire.setPins(5, 6);
     display.begin();
     display.enableUTF8Print();
@@ -1682,7 +1684,7 @@ void parse_msg() {
 #if HAS_OLED
 // Function for drawing a string on the OLED display
 void drawString(String line1, String line2, String line3, String line4) {
-  #if (OLED_DRIVER == OLED_DRIVER_SSD1306)
+  #if (OLED_DRIVER == OLED_DRIVER_ADAFRUIT)
     display.clearDisplay();
     // set text color
     display.setTextColor(WHITE);
@@ -1702,7 +1704,7 @@ void drawString(String line1, String line2, String line3, String line4) {
     // show text
     display.println(line4);
     display.display();
-  #elif (OLED_DRIVER == OLED_DRIVER_SSD1312)
+  #elif (OLED_DRIVER == OLED_DRIVER_U8G2)
     display.clearBuffer();
     display.setFont(u8g2_font_unifont_t_chinese3);
     // set text cursor position

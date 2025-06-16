@@ -17,6 +17,8 @@ limitations under the License.
 
 package org.openbot.tracking;
 
+import static java.lang.Math.abs;
+
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -29,6 +31,10 @@ import android.graphics.RectF;
 import android.text.TextUtils;
 import android.util.Pair;
 import android.util.TypedValue;
+
+import androidx.annotation.NonNull;
+
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
@@ -74,8 +80,14 @@ public class MultiBoxTracker {
   private float leftControl;
   private float rightControl;
   private boolean useDynamicSpeed = false;
+  private int trackId = -1;
+  private ByteTracker byteTracker = new ByteTracker();
+
+  private float speedEma = 0.0F;
 
   public MultiBoxTracker(final Context context) {
+    byteTracker.init(10, 50); // TODO wuyijun 待优化
+
     for (final int color : COLORS) {
       availableColors.add(color);
     }
@@ -118,9 +130,75 @@ public class MultiBoxTracker {
     }
   }
 
-  public synchronized void trackResults(final List<Recognition> results, final long timestamp) {
+  public synchronized void trackResults(final List<Recognition> results, final long timestamp, final boolean byteTrack) {
     logger.i("Processing %d results from %d", results.size(), timestamp);
-    processResults(results);
+    if (byteTrack) {
+      trackResults(results, timestamp);
+    } else {
+      processResults(results);
+    }
+  }
+
+  public synchronized void trackResults(final List<Recognition> results, final long timestamp) {
+
+    ArrayList<JavaObject> resultList = new ArrayList<>();
+    for (int i = 0; i < results.size(); i ++) {
+      Recognition recognition = results.get(i);
+      JavaObject detected = new JavaObject(recognition.getLocation(), recognition.getClassId(), recognition.getConfidence());
+      resultList.add(detected);
+    }
+    List<JavaSTrack> stracks = byteTracker.update(resultList);
+    int index = -1;
+    for (int i = 0; i < stracks.size(); i ++) {
+      JavaSTrack strack = stracks.get(i);
+      if (strack.trackId == this.trackId || this.trackId == -1) {
+        index = i;
+        break;
+      }
+    }
+//    int recIndex = -1; // TODO wuyijun 根据RecF的值匹配recognition index
+//    for (int i = 0; i < results.size() && index >= 0; i ++) {
+//      if (results.get(i).getLocation().equals(stracks.get(index).rect)) {
+//        recIndex = i;
+//        break;
+//      }
+//    }
+//
+//    // swap i and 0
+//    if (recIndex > 0) {
+//      Recognition temp = results.get(0);
+//      results.set(0, results.get(recIndex));
+//      results.set(recIndex, temp);
+//    }
+
+    List<Recognition> trackedRecognitions = strackToRecognition(stracks, index);
+
+    if (this.trackId == -1 && !results.isEmpty() && index >= 0 && index < stracks.size()) {
+      this.trackId = stracks.get(index).trackId;
+    } else if (index == -1 && !results.isEmpty() && !stracks.isEmpty()) {
+      this.trackId = stracks.get(0).trackId;
+    }
+    if (trackedRecognitions.isEmpty()) {
+      //trackedRecognitions = strackToRecognition(byteTracker.predict_lost(), 0);
+    }
+    processResults(trackedRecognitions);
+    //processResults(results);
+  }
+
+  @NonNull
+  private static List<Recognition> strackToRecognition(List<JavaSTrack> stracks, int index) {
+    List<Recognition> trackedRecognitions = new ArrayList<>();
+    if (index >= 0 && index < stracks.size()) {
+      Recognition recognition = new Recognition("0", "" + stracks.get(index).trackId, stracks.get(index).score, stracks.get(index).rect, 1);
+      trackedRecognitions.add(recognition);
+    }
+    for (int i = 0; i < stracks.size(); i ++) {
+      if (i != index) {
+        Recognition recognition = new Recognition("0", "" + stracks.get(i).trackId, stracks.get(i).score, stracks.get(i).rect, 1);
+        trackedRecognitions.add(recognition);
+      }
+    }
+    return trackedRecognitions;
   }
 
   private Matrix getFrameToCanvasMatrix() {
@@ -144,6 +222,9 @@ public class MultiBoxTracker {
             false);
   }
 
+  public synchronized Control updateTarget() {
+    return updateTarget(false);
+  }
   /**
    * Determine the robot controls/steering from the position of the tracked object/person on screen.
    * The follow speed is adjusted based on the area of the bounding box of the tracked object.
@@ -151,7 +232,7 @@ public class MultiBoxTracker {
    *
    * @return the adjusted speed control for left and right wheels in the range -1.0 ... 1.0
    */
-  public synchronized Control updateTarget() {
+  public synchronized Control updateTarget(boolean fastTurn) {
     if (!trackedObjects.isEmpty()) {
       // Pick detection with highest probability
       final RectF trackedPos = new RectF(trackedObjects.get(0).location);
@@ -160,14 +241,28 @@ public class MultiBoxTracker {
       // calculate track box area for distance estimate
       float boxArea = trackedPos.height() * trackedPos.width();
       float centerX = (rotated ? trackedPos.centerY() : trackedPos.centerX());
+      float leftX = (rotated ? trackedPos.top : trackedPos.left);
+      float rightX = (rotated ? trackedPos.bottom : trackedPos.right);
       // Make sure object center is in frame
       centerX = Math.max(0.0f, Math.min(centerX, imgWidth));
       // Scale relative position along x-axis between -1 and 1
       float x_pos_norm = 1.0f - 2.0f * centerX / imgWidth;
+      // Make sure object center is in frame
+      leftX = Math.max(0.0f, Math.min(leftX, imgWidth));
+      // Scale relative position along x-axis between -1 and 1
+      float left_norm = 1.0f - 2.0f * leftX / imgWidth;
+      // Make sure object center is in frame
+      rightX = Math.max(0.0f, Math.min(rightX, imgWidth));
+      // Scale relative position along x-axis between -1 and 1
+      float right_norm = 1.0f - 2.0f * rightX / imgWidth;
       // Scale for steering signal and account for rotation,
       float x_pos_scaled = rotated ? -x_pos_norm * 1.0f : x_pos_norm * 1.0f;
       //// Scale by "exponential" function: y = x / sqrt(1-x^2)
       // Math.max (Math.min(x_pos_norm / Math.sqrt(1 - x_pos_norm * x_pos_norm),2),-2);
+      boolean goingOutOfFOV = false;
+      if (abs(x_pos_norm) > 0.6 && left_norm * right_norm > 0 && (abs(left_norm) < 0.05 || abs(left_norm) > 0.95 || abs(right_norm) < 0.05 || abs(right_norm) > 0.95)) {
+        goingOutOfFOV = true;
+      }
 
       if (x_pos_scaled < 0) {
         leftControl = 1.0f;
@@ -180,17 +275,44 @@ public class MultiBoxTracker {
       // adjust speed depending on size of detected object bounding box
       if (useDynamicSpeed) {
         float scaleFactor = 1.0f - boxArea / (frameWidth * frameHeight);
-        scaleFactor = scaleFactor > 0.75f ? 1.0f : scaleFactor; // tracked object far, full speed
+        float speedFactor = scaleFactor > 0.75f ? 1.0f : (scaleFactor + 0.25f); // tracked object far, full speed
         // apply scale factor if tracked object is not too near, otherwise stop
-        if (scaleFactor > 0.25f) {
-          leftControl *= scaleFactor;
-          rightControl *= scaleFactor;
+        if (fastTurn) {
+          leftControl *= speedFactor * 1.05;
+          rightControl *= speedFactor * 1.05;
+
+          float mean = (leftControl + rightControl) / 2.0F;
+          float diff = (leftControl - rightControl) / 2.0F;
+          float frictionFactor = 1.0F; // 户外粗糙水泥地面1.0，室内地板0.8，室内光滑地砖0.6
+          float alpha = 0.1F;
+          /**
+           * 指数移动平均计算器。
+           *         :param alpha: 平滑常数 (0 < alpha <= 1)。
+           *                       alpha越小，历史数据权重越大，曲线越平滑。
+           *                       alpha越大，近期数据权重越大，曲线越敏感。
+           *                       常用的alpha计算方式是 2 / (N + 1)，N为周期。
+           *                       例如，N=19时，alpha=0.1。
+           */
+          float turnSensitivity = (goingOutOfFOV ? 1.0F : 0.7F) * frictionFactor;
+          if ((speedEma < 0.01 && goingOutOfFOV) || scaleFactor < 0.25f) { //停止状态下被引导转向，或已足够接近
+            leftControl = 0.0F + diff / scaleFactor * turnSensitivity;
+            rightControl = 0.0F - diff / scaleFactor * turnSensitivity;
+            speedEma = speedEma * (1 - alpha) + 0 * alpha;
+          } else  {
+            leftControl = mean + diff / scaleFactor * turnSensitivity;
+            rightControl = mean - diff / scaleFactor * turnSensitivity;
+            speedEma = speedEma * (1 - alpha) + mean * alpha;
+          }
         } else {
-          leftControl = 0.0f;
-          rightControl = 0.0f;
+          if (scaleFactor > 0.25f) {
+            leftControl *= scaleFactor;
+            rightControl *= scaleFactor;
+          } else {
+            leftControl = 0.0f;
+            rightControl = 0.0f;
+          }
         }
       }
-
     } else {
       leftControl = 0.0f;
       rightControl = 0.0f;
