@@ -734,7 +734,7 @@ unsigned int distance_estimate = -1;    //cm
 #define OLED_DRIVER_ADAFRUIT 0
 #define OLED_DRIVER_U8G2 1
 #define OLED_DRIVER_TFT 2
-#define OLED_DRIVER OLED_DRIVER_U8G2
+#define OLED_DRIVER OLED_DRIVER_TFT
 
 #if (OLED_DRIVER == OLED_DRIVER_ADAFRUIT)
 #include <Adafruit_GFX.h>
@@ -1722,7 +1722,7 @@ void drawString(String line1, String line2, String line3, String line4) {
     display.println(line4);
     display.sendBuffer();
   #elif (OLED_DRIVER == OLED_DRIVER_TFT)
-    display.setTextColor(TFT_WHITE);
+    display.setTextColor(TFT_WHITE, TFT_BLUE);
     display.drawString(line1, 10, 10);
     display.drawString(line2, 10, 20);
     display.drawString(line3, 10, 30);
@@ -1744,8 +1744,12 @@ void display_vehicle_data() {
   String left_rpm_str = String("Left RPM:  ") + String(rpm_left, 0);
   String right_rpm_str = String("Right RPM:  ") + String(rpm_right, 0);
 #else
-  String left_rpm_str = String("Left Ctrl:  ") + String(ctrl_left);
-  String right_rpm_str = String("Right Ctrl:  ") + String(ctrl_right);
+  char buffer[20]; // 创建一个足够大的字符缓冲区
+  // 格式化左轮控制值
+  sprintf(buffer, "Left Ctrl:  %03d", ctrl_left);
+  String left_rpm_str = String(buffer);
+  sprintf(buffer, "Right Ctrl:  %03d", ctrl_right);
+  String right_rpm_str = String(buffer);
 #endif
 #if HAS_SONAR
   String distance_str = String("Distance:   ") + String(distance_estimate);
