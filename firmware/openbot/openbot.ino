@@ -480,7 +480,7 @@ const int RHS_PWM_OUT = 1;
 const String robot_type = "DIY_ESP32";
 #define MCU ESP32
 #include <esp_wifi.h>
-#include <Servo.h>
+#include <ESP32Servo.h>
 Servo SERVO_HEAD;
 #define HAS_BLUETOOTH 1
 #define analogWrite ledcWrite
@@ -858,10 +858,6 @@ void setup() {
   // Attach the ESC and SERVO
   ESC.attach(PIN_PWM_T, 1000, 2000);    // (pin, min pulse width, max pulse width in microseconds)
   SERVO.attach(PIN_PWM_S, 1000, 2000);  // (pin, min pulse width, max pulse width in microseconds)
-#elif (OPENBOT == DIY_ESP32)
-  pinMode(PIN_PWM_H, OUTPUT);
-  // Attach the ESC and SERVO
-  SERVO_HEAD.attach(PIN_PWM_H, 500, 2500);    // (pin, min pulse width, max pulse width in microseconds)
 #endif
 #if (MCU == NANO)
   pinMode(PIN_PWM_L1, OUTPUT);
@@ -978,6 +974,12 @@ void setup() {
   ledcAttachPin(PIN_LED_RF, CH_LED_RF);
 #endif
 
+#if (OPENBOT == DIY_ESP32)
+  //pinMode(PIN_PWM_H, OUTPUT);
+  // Attach the ESC and SERVO
+  SERVO_HEAD.attach(PIN_PWM_H, 500, 2500);    // (pin, min pulse width, max pulse width in microseconds)
+#endif
+
 #endif
 
 #if (OPENBOT == MTV)
@@ -1039,7 +1041,8 @@ void setup() {
 //LOOP
 //------------------------------------------------------//
 void loop() {
-
+  delay(10);
+  delayMicroseconds(10);
 #if (HAS_BLUETOOTH)
   // disconnecting
   if (!deviceConnected && oldDeviceConnected) {
@@ -1349,10 +1352,27 @@ void update_right_motors() {
   }
 }
 
+unsigned long lastUpdate = 0;
+
 void update_servo_angle() {
-  //int servo_diff = ctrl_servo - ctrl_servo_old;
-  int lookingAt = (int)map(ctrl_servo, -255, 255, 0, 180);
-  SERVO_HEAD.write(15, lookingAt, 0.5, 0.1);
+  unsigned long currentMillis = millis();
+  //if (currentMillis - lastUpdate > 1000) {
+    //int servo_diff = ctrl_servo - ctrl_servo_old;
+    long tick = (currentMillis % 10000);
+    int lookingAt = tick <= 5000 ? tick / 5000.0f * 180 : (10000 - tick) / 5000.0f * 180;
+    //int lookingAt = (int)map(ctrl_servo, -255, 255, 0, 180);
+    //SERVO_HEAD.write(15, lookingAt, 0.5, 0.1);
+    //if (tick % 10000 <= 10000) {
+      SERVO_HEAD.write(lookingAt);
+      Serial.print("Control: ");
+      Serial.print(ctrl_left);
+      Serial.print(",");
+      Serial.print(ctrl_right);
+      Serial.print(",");
+      Serial.println(lookingAt);
+    //}
+    lastUpdate = currentMillis;
+  //}
 }
 
 void stop_right_motors() {
