@@ -414,6 +414,9 @@ public class Vehicle {
     return control.getRight() * speedMultiplier;
   }
 
+  public float getServoAngle() {
+    return control.getServoAngle() * 255;
+  }
   public void sendLightIntensity(float frontPercent, float backPercent) {
     int front = (int) (frontPercent * 255.f);
     int back = (int) (backPercent * 255.f);
@@ -424,6 +427,7 @@ public class Vehicle {
 
     int left = (int) (getLeftSpeed());
     int right = (int) (getRightSpeed());
+    int servoAngle = (int)(getServoAngle());
 
     if (noiseEnabled && noise.getDirection() < 0)
       left =
@@ -434,7 +438,7 @@ public class Vehicle {
     if (noiseEnabled && noise.getDirection() > 0)
       right = (int) ((control.getRight() - noise.getValue()) * speedMultiplier);
 
-    sendStringToDevice(String.format(Locale.US, "c%d,%d\n", left, right));
+    sendStringToDevice(String.format(Locale.US, "c%d,%d,%d\n", left, right,servoAngle));
   }
 
   protected void sendHeartbeat(int timeout_ms) {

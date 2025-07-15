@@ -70,7 +70,7 @@
 #define NO_PHONE_MODE 0
 
 // Enable/Disable debug print (1,0)
-#define DEBUG 0
+#define DEBUG 1
 
 // Enable/Disable coast mode (1,0)
 // When no control is applied, the robot will either coast (1) or actively stop (0)
@@ -480,6 +480,8 @@ const int RHS_PWM_OUT = 1;
 const String robot_type = "DIY_ESP32";
 #define MCU ESP32
 #include <esp_wifi.h>
+#include <Servo.h>
+Servo SERVO_HEAD;
 #define HAS_BLUETOOTH 1
 #define analogWrite ledcWrite
 #define attachPinChangeInterrupt attachInterrupt
@@ -761,6 +763,8 @@ const unsigned int SCREEN_HEIGHT = 64;  // OLED display height, in pixels
 //Vehicle Control
 int ctrl_left = 0;
 int ctrl_right = 0;
+int ctrl_servo = 0;
+int ctrl_servo_old = 0;
 
 #if (HAS_VOLTAGE_DIVIDER)
 // Voltage measurement
@@ -854,6 +858,10 @@ void setup() {
   // Attach the ESC and SERVO
   ESC.attach(PIN_PWM_T, 1000, 2000);    // (pin, min pulse width, max pulse width in microseconds)
   SERVO.attach(PIN_PWM_S, 1000, 2000);  // (pin, min pulse width, max pulse width in microseconds)
+#elif (OPENBOT == DIY_ESP32)
+  pinMode(PIN_PWM_H, OUTPUT);
+  // Attach the ESC and SERVO
+  SERVO_HEAD.attach(PIN_PWM_H, 500, 2500);    // (pin, min pulse width, max pulse width in microseconds)
 #endif
 #if (MCU == NANO)
   pinMode(PIN_PWM_L1, OUTPUT);
@@ -1221,6 +1229,7 @@ void update_vehicle() {
 #else
   update_left_motors();
   update_right_motors();
+  update_servo_angle();
 #endif
 }
 
@@ -1338,6 +1347,12 @@ void update_right_motors() {
       stop_right_motors();
     }
   }
+}
+
+void update_servo_angle() {
+  //int servo_diff = ctrl_servo - ctrl_servo_old;
+  int lookingAt = (int)map(ctrl_servo, -255, 255, 0, 180);
+  SERVO_HEAD.write(15, lookingAt, 0.5, 0.1);
 }
 
 void stop_right_motors() {
@@ -1459,6 +1474,9 @@ void process_ctrl_msg() {
   ctrl_left = atoi(tmp);        // convert to int
   tmp = strtok(NULL, ",:");     // continues where the previous call left off
   ctrl_right = atoi(tmp);       // convert to int
+  tmp = strtok(NULL, ",:");     // continues where the previous call left off
+  ctrl_servo_old = ctrl_servo;
+  ctrl_servo = atoi(tmp);       // convert to int
 #if DEBUG
   Serial.print("Control: ");
   Serial.print(ctrl_left);

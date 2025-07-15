@@ -79,6 +79,7 @@ public class MultiBoxTracker {
   private int sensorOrientation;
   private float leftControl;
   private float rightControl;
+  private float servoAngle;
   private boolean useDynamicSpeed = false;
   private int trackId = -1;
   private ByteTracker byteTracker = new ByteTracker();
@@ -225,6 +226,11 @@ public class MultiBoxTracker {
   public synchronized Control updateTarget() {
     return updateTarget(false);
   }
+
+  public synchronized Control updateTarget(boolean fastTurn) {
+    return updateTarget(false, 0.0f);
+  }
+
   /**
    * Determine the robot controls/steering from the position of the tracked object/person on screen.
    * The follow speed is adjusted based on the area of the bounding box of the tracked object.
@@ -232,7 +238,7 @@ public class MultiBoxTracker {
    *
    * @return the adjusted speed control for left and right wheels in the range -1.0 ... 1.0
    */
-  public synchronized Control updateTarget(boolean fastTurn) {
+  public synchronized Control updateTarget(boolean fastTurn, float servoAngle) {
     if (!trackedObjects.isEmpty()) {
       // Pick detection with highest probability
       final RectF trackedPos = new RectF(trackedObjects.get(0).location);
@@ -246,7 +252,11 @@ public class MultiBoxTracker {
       // Make sure object center is in frame
       centerX = Math.max(0.0f, Math.min(centerX, imgWidth));
       // Scale relative position along x-axis between -1 and 1
-      float x_pos_norm = 1.0f - 2.0f * centerX / imgWidth;
+      float fovDegree = 70.0f;
+      float x_pos_norm = 1.0f - 2.0f * (centerX / imgWidth + servoAngle / fovDegree) / (1 + 90/fovDegree);
+      float angleAdjustSpeed = 1.0f;
+      float servoAngleChange = angleAdjustSpeed * (- x_pos_norm);
+      this.servoAngle = servoAngle + servoAngleChange;
       // Make sure object center is in frame
       leftX = Math.max(0.0f, Math.min(leftX, imgWidth));
       // Scale relative position along x-axis between -1 and 1
@@ -320,7 +330,8 @@ public class MultiBoxTracker {
 
     return new Control(
         (0 > sensorOrientation) ? rightControl : leftControl,
-        (0 > sensorOrientation) ? leftControl : rightControl);
+        (0 > sensorOrientation) ? leftControl : rightControl,
+            this.servoAngle);
   }
 
   public synchronized void draw(final Canvas canvas) {

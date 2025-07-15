@@ -77,21 +77,15 @@ class ChatViewModel @Inject constructor(
         }
 
     fun initialize(deviceInfo: DeviceInfo?, settings: SettingsRepository?) {
-        var deviceInfo2 = deviceInfo
-        var settings2 = settings
-        if (deviceInfo == null) {
-            deviceInfo2 = DeviceInfo(1, 2, 3, 4,
+        var deviceInfo2 = deviceInfo ?: DeviceInfo(1, 2, 3, 4,
                 "", "", "",
                 ChipInfo(1, 2, 3, 5),
                 Application("", "", "", "", ""),
                 emptyList(), OTA(""), Board("", "", emptyList(), "", "")
             )
-        }
-        if (settings == null) {
-            settings2 = SettingsRepositoryImpl().apply {
+        var settings2 = settings ?: SettingsRepositoryImpl().apply {
                 this.webSocketUrl = "ws://192.168.101.14:8091/ws/xiaozhi/v1/"
             }
-        }
 
         protocol = initProtocol(deviceInfo2, settings2)
 
@@ -262,7 +256,7 @@ class ChatViewModel @Inject constructor(
                 }
 
                 DeviceState.IDLE -> {
-                    if (protocol!!.openAudioChannel()) {
+                    if (protocol?.openAudioChannel() == true) {
                         keepListening = true
                         protocol!!.sendStartListening(ListeningMode.AUTO_STOP)
                         deviceState = DeviceState.LISTENING
@@ -296,14 +290,14 @@ class ChatViewModel @Inject constructor(
 
             keepListening = false
             if (deviceState == DeviceState.IDLE) {
-                if (!protocol!!.isAudioChannelOpened()) {
+                if (protocol?.isAudioChannelOpened() == false) {
                     deviceState = DeviceState.CONNECTING
                     if (!protocol!!.openAudioChannel()) {
                         deviceState = DeviceState.IDLE
                         return@launch
                     }
                 }
-                protocol!!.sendStartListening(ListeningMode.MANUAL)
+                protocol?.sendStartListening(ListeningMode.MANUAL)
                 deviceState = DeviceState.LISTENING
             } else if (deviceState == DeviceState.SPEAKING) {
                 abortSpeaking(AbortReason.NONE)
@@ -323,7 +317,7 @@ class ChatViewModel @Inject constructor(
         aborted = true
         //viewModelScope.launch {
         GlobalScope.launch {
-            protocol!!.sendAbortSpeaking(reason)
+            protocol?.sendAbortSpeaking(reason)
         }
     }
     private fun schedule(task: suspend () -> Unit) {
@@ -338,14 +332,14 @@ class ChatViewModel @Inject constructor(
         //viewModelScope.launch {
         GlobalScope.launch {
             if (deviceState == DeviceState.LISTENING) {
-                protocol!!.sendStopListening()
+                protocol?.sendStopListening()
                 deviceState = DeviceState.IDLE
             }
         }
     }
 
     override fun onCleared() {
-        protocol!!.dispose()
+        protocol?.dispose()
         encoder?.release()
         decoder?.release()
         player?.stop()

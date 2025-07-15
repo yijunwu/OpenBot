@@ -225,14 +225,47 @@
 
             <LinearLayout
                 android:id="@+id/bottom_buttons"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_width="match_parent"  
+				android:layout_height="wrap_content"
                 android:layout_alignParentBottom="true"
                 android:layout_marginEnd="20dp"
                 android:layout_marginBottom="20dp"
                 android:layout_toStartOf="@+id/right_slider"
-                android:background="@drawable/shaded"
-                android:orientation="horizontal">
+                android:layout_toEndOf="@id/left_slider" 
+				android:background="@drawable/shaded"
+                android:gravity="center_vertical"  
+				android:orientation="horizontal"
+                android:paddingStart="5dp" 
+				android:paddingEnd="5dp">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="horizontal">
+
+                    <Button
+                        android:id="@+id/button_a"
+                        style="@style/IconOnlyButton"
+                        android:layout_width="60dp"
+                        android:layout_height="60dp"
+                        android:layout_marginEnd="8dp"
+                        android:background="@drawable/button"
+                        android:text="A"
+                        android:textColor="@android:color/white"
+                        app:icon="@drawable/exit" />
+
+                    <Button
+                        android:id="@+id/button_b"
+                        style="@style/IconOnlyButton"
+                        android:layout_width="60dp"
+                        android:layout_height="60dp"
+                        android:background="@drawable/button"
+                        android:text="B"
+                        android:textColor="@android:color/white"
+                        />
+                </LinearLayout>
 
                 <org.openbot.controller.customComponents.ExitButton
                     android:id="@+id/exit"
