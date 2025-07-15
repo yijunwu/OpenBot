@@ -55,7 +55,7 @@
 //------------------------------------------------------//
 
 // Setup the OpenBot version (DIY, PCB_V1, PCB_V2, RTR_TT, RC_CAR, LITE, RTR_TT2, RTR_520, DIY_ESP32)
-#define OPENBOT DIY_ESP32C3
+#define OPENBOT DIY_ESP32
 
 //------------------------------------------------------//
 // SETTINGS - Global settings
@@ -480,7 +480,7 @@ const int RHS_PWM_OUT = 1;
 const String robot_type = "DIY_ESP32";
 #define MCU ESP32
 #include <esp_wifi.h>
-#define HAS_BLUETOOTH 0
+#define HAS_BLUETOOTH 1
 #define analogWrite ledcWrite
 #define attachPinChangeInterrupt attachInterrupt
 #define detachPinChangeInterrupt detachInterrupt
@@ -496,10 +496,10 @@ const float VOLTAGE_LOW = 9.0f;
 const float VOLTAGE_MAX = 12.6f;
 const float ADC_FACTOR = 3.3 / 4095;
 #define HAS_INDICATORS 0
-#define HAS_SONAR 1
+#define HAS_SONAR 0
 #define SONAR_MEDIAN 0
-#define HAS_SPEED_SENSORS_FRONT 1
-#define HAS_OLED 1
+#define HAS_SPEED_SENSORS_FRONT 0
+#define HAS_OLED 0
 //PWM properties
 const int FREQ = 5000;
 const int RES = 8;
@@ -515,10 +515,11 @@ const int PIN_PWM_LF1 = 13;
 const int PIN_PWM_LF2 = 12;
 const int PIN_PWM_LB1 = 13;
 const int PIN_PWM_LB2 = 12;
-const int PIN_PWM_RF1 = 15;
-const int PIN_PWM_RF2 = 2;
-const int PIN_PWM_RB1 = 15;
-const int PIN_PWM_RB2 = 2;
+const int PIN_PWM_RF1 = 27;
+const int PIN_PWM_RF2 = 33;
+const int PIN_PWM_RB1 = 27;
+const int PIN_PWM_RB2 = 33;
+const int PIN_PWM_H = 15;
 const int PIN_SPEED_LF = 35;
 const int PIN_SPEED_LB = 34;
 const int PIN_SPEED_RF = 22;
@@ -669,7 +670,7 @@ class MyServerCallbacks : public BLEServerCallbacks {
 
 class MyCallbacks : public BLECharacteristicCallbacks {
   void onWrite(BLECharacteristic *pCharacteristic) {
-    String bleReceiver = pCharacteristic->getValue();
+    std::string bleReceiver = pCharacteristic->getValue();
     if (bleReceiver.length() > 0) {
       for (int i = 0; i < bleReceiver.length(); i++) {
         on_ble_rx(bleReceiver[i]);
