@@ -79,7 +79,7 @@ public class MultiBoxTracker {
   private int sensorOrientation;
   private float leftControl;
   private float rightControl;
-  private float servoAngle;
+  private float servoAngle = 0;
   private boolean useDynamicSpeed = false;
   private int trackId = -1;
   private ByteTracker byteTracker = new ByteTracker();
@@ -253,10 +253,12 @@ public class MultiBoxTracker {
       centerX = Math.max(0.0f, Math.min(centerX, imgWidth));
       // Scale relative position along x-axis between -1 and 1
       float fovDegree = 70.0f;
-      float x_pos_norm = 1.0f - 2.0f * (centerX / imgWidth + servoAngle / fovDegree) / (1 + 90/fovDegree);
-      float angleAdjustSpeed = 1.0f;
+      float temp = 1.0f - 2.0f * (centerX / imgWidth);
+      float x_pos_norm = temp; //(temp + servoAngle / fovDegree) / (1 + 90/fovDegree);
+      float angleAdjustSpeed = 0.5f;
       float servoAngleChange = angleAdjustSpeed * (- x_pos_norm);
       this.servoAngle = servoAngle + servoAngleChange;
+      this.servoAngle = Math.max(-1.0f, Math.min(this.servoAngle, 1.0f));
       // Make sure object center is in frame
       leftX = Math.max(0.0f, Math.min(leftX, imgWidth));
       // Scale relative position along x-axis between -1 and 1

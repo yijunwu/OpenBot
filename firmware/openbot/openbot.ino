@@ -974,12 +974,6 @@ void setup() {
   ledcAttachPin(PIN_LED_RF, CH_LED_RF);
 #endif
 
-#if (OPENBOT == DIY_ESP32)
-  //pinMode(PIN_PWM_H, OUTPUT);
-  // Attach the ESC and SERVO
-  SERVO_HEAD.attach(PIN_PWM_H, 500, 2500);    // (pin, min pulse width, max pulse width in microseconds)
-#endif
-
 #endif
 
 #if (OPENBOT == MTV)
@@ -1034,6 +1028,12 @@ void setup() {
   pAdvertising->addServiceUUID(BLEUUID(SERVICE_UUID));
   bleServer->getAdvertising()->start();
   Serial.println("Waiting a client connection to notify...");
+#endif
+
+#if (OPENBOT == DIY_ESP32)
+  //pinMode(PIN_PWM_H, OUTPUT);
+  // Attach the ESC and SERVO
+  SERVO_HEAD.attach(PIN_PWM_H, 500, 2500);    // (pin, min pulse width, max pulse width in microseconds)
 #endif
 }
 
@@ -1356,23 +1356,22 @@ unsigned long lastUpdate = 0;
 
 void update_servo_angle() {
   unsigned long currentMillis = millis();
-  //if (currentMillis - lastUpdate > 1000) {
-    //int servo_diff = ctrl_servo - ctrl_servo_old;
-    long tick = (currentMillis % 10000);
-    int lookingAt = tick <= 5000 ? tick / 5000.0f * 180 : (10000 - tick) / 5000.0f * 180;
-    //int lookingAt = (int)map(ctrl_servo, -255, 255, 0, 180);
-    //SERVO_HEAD.write(15, lookingAt, 0.5, 0.1);
-    //if (tick % 10000 <= 10000) {
-      SERVO_HEAD.write(lookingAt);
-      Serial.print("Control: ");
-      Serial.print(ctrl_left);
-      Serial.print(",");
-      Serial.print(ctrl_right);
-      Serial.print(",");
-      Serial.println(lookingAt);
-    //}
-    lastUpdate = currentMillis;
-  //}
+  int servo_diff = ctrl_servo - ctrl_servo_old;
+  int lookingAt = (int)map(ctrl_servo, -255, 255, 0, 180);
+
+  // long randomNumber = random(-5, 6);
+  // ctrl_servo += randomNumber;
+  // if (ctrl_servo > 180) ctrl_servo = 180;
+  // if (ctrl_servo < 0) ctrl_servo = 0;
+  
+  //SERVO_HEAD.write(15, lookingAt, 0.5, 0.1);
+  SERVO_HEAD.write(lookingAt);
+  Serial.print("Control: ");
+  Serial.print(ctrl_left);
+  Serial.print(",");
+  Serial.print(ctrl_right);
+  Serial.print(",");
+  Serial.println(lookingAt);
 }
 
 void stop_right_motors() {
