@@ -480,8 +480,6 @@ const int RHS_PWM_OUT = 1;
 const String robot_type = "DIY_ESP32";
 #define MCU ESP32
 #include <esp_wifi.h>
-#include <ESP32Servo.h>
-Servo SERVO_HEAD;
 #define HAS_BLUETOOTH 1
 #define analogWrite ledcWrite
 #define attachPinChangeInterrupt attachInterrupt
@@ -502,6 +500,7 @@ const float ADC_FACTOR = 3.3 / 4095;
 #define SONAR_MEDIAN 0
 #define HAS_SPEED_SENSORS_FRONT 0
 #define HAS_OLED 0
+#define HAS_HEAD_SERVO 1
 //PWM properties
 const int FREQ = 5000;
 const int RES = 8;
@@ -521,7 +520,13 @@ const int PIN_PWM_RF1 = 27;
 const int PIN_PWM_RF2 = 33;
 const int PIN_PWM_RB1 = 27;
 const int PIN_PWM_RB2 = 33;
+
 const int PIN_PWM_H = 15;
+// 新增舵機的專用 PWM 設定
+const int SERVO_PWM_CHANNEL = 15; // 使用通道 15 (0-15可選，選個高的)
+const int SERVO_PWM_FREQ = 50;    // 舵機標準頻率 50Hz
+const int SERVO_PWM_RESOLUTION = 16; // 使用16位元解析度，控制更精確
+
 const int PIN_SPEED_LF = 35;
 const int PIN_SPEED_LB = 34;
 const int PIN_SPEED_RF = 22;
@@ -960,6 +965,14 @@ void setup() {
   ledcAttachPin(PIN_PWM_RF2, CH_PWM_R2);
   ledcAttachPin(PIN_PWM_RB2, CH_PWM_R2);
 
+#if (HAS_HEAD_SERVO)
+  // ... 在 setup() 函式中，所有 OpenBot 的 ledc...() 呼叫之後 ...
+  // 為舵機手動設定 PWM 通道和引腳
+  ledcSetup(SERVO_PWM_CHANNEL, SERVO_PWM_FREQ, SERVO_PWM_RESOLUTION);
+  ledcAttachPin(PIN_PWM_H, SERVO_PWM_CHANNEL);
+  Serial.println("Servo Head Manually Attached on Channel 15.");
+#endif  
+
 #if (HAS_LEDS_BACK)
   ledcSetup(CH_LED_LB, FREQ, RES);
   ledcSetup(CH_LED_RB, FREQ, RES);
@@ -1030,11 +1043,6 @@ void setup() {
   Serial.println("Waiting a client connection to notify...");
 #endif
 
-#if (OPENBOT == DIY_ESP32)
-  //pinMode(PIN_PWM_H, OUTPUT);
-  // Attach the ESC and SERVO
-  SERVO_HEAD.attach(PIN_PWM_H, 500, 2500);    // (pin, min pulse width, max pulse width in microseconds)
-#endif
 }
 
 //------------------------------------------------------//
@@ -1352,6 +1360,31 @@ void update_right_motors() {
   }
 }
 
+/**
+ * @brief 手動設定舵機角度 (0-180度)
+ * @param angle 要設定的角度
+ */
+void set_servo_angle(int angle) {
+  // 舵機的脈衝寬度通常在 500µs (0度) 到 2500µs (180度) 之間
+  // 您的舵機可能是 1000-2000µs，這裡使用常見的 500-2500 作為範例，可以微調
+  const int min_pulse_us = 500;
+  const int max_pulse_us = 2500;
+
+  // 將角度 (0-180) 映射到脈衝寬度 (µs)
+  long pulse_us = map(angle, 0, 180, min_pulse_us, max_pulse_us);
+
+  // 計算 PWM 週期的總時長 (µs)
+  // 1 / 50Hz = 0.02s = 20000µs
+  long cycle_us = 1000000 / SERVO_PWM_FREQ;
+
+  // 計算 16 位元解析度下的佔空比數值
+  // (2^16 - 1) = 65535
+  long duty = (65535 * pulse_us) / cycle_us;
+
+  // 寫入佔空比
+  ledcWrite(SERVO_PWM_CHANNEL, duty);
+}
+
 unsigned long lastUpdate = 0;
 
 void update_servo_angle() {
@@ -1365,13 +1398,14 @@ void update_servo_angle() {
   // if (ctrl_servo < 0) ctrl_servo = 0;
   
   //SERVO_HEAD.write(15, lookingAt, 0.5, 0.1);
-  SERVO_HEAD.write(lookingAt);
+  //SERVO_HEAD.write(lookingAt);
+  set_servo_angle(lookingAt);
   Serial.print("Control: ");
   Serial.print(ctrl_left);
   Serial.print(",");
   Serial.print(ctrl_right);
   Serial.print(",");
-  Serial.println(lookingAt);
+  Serial.println(ctrl_servo);
 }
 
 void stop_right_motors() {
@@ -1500,7 +1534,9 @@ void process_ctrl_msg() {
   Serial.print("Control: ");
   Serial.print(ctrl_left);
   Serial.print(",");
-  Serial.println(ctrl_right);
+  Serial.print(ctrl_right);
+  Serial.print(",");
+  Serial.println(ctrl_servo);
 #endif
 }
 
