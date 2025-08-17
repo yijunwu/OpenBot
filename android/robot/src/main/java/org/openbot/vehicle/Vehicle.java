@@ -25,7 +25,7 @@ public class Vehicle {
 
   private int indicator = 0;
   private int speedMultiplier = 192; // 128,192,255
-  private Control control = new Control(0, 0);
+  private Control control = new Control(0, 0, 0);
 
   private final SensorReading batteryVoltage = new SensorReading();
   private final SensorReading leftWheelRpm = new SensorReading();
@@ -287,7 +287,12 @@ public class Vehicle {
   }
 
   public void setControl(float left, float right) {
-    this.control = new Control(left, right);
+    this.control = new Control(left, right, 0.0f);
+    sendControl();
+  }
+
+  public void setControl(float left, float right, float servoAngle) {
+    this.control = new Control(left, right, servoAngle);
     sendControl();
   }
 

@@ -575,7 +575,7 @@ public class ObjectNavFragment extends CameraFragment {
     binding.controllerContainer.speedMode.setAlpha(b ? 0.5f : 1f);
 
     resetFpsUi();
-    if (!b) handler.postDelayed(() -> vehicle.setControl(0, 0), Math.max(lastProcessingTimeMs, 50));
+    if (!b) handler.postDelayed(() -> vehicle.setControl(0, 0, 0), Math.max(lastProcessingTimeMs, 50));
   }
 
   @Override

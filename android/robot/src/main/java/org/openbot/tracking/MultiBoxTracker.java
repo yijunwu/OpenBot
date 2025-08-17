@@ -18,6 +18,7 @@ limitations under the License.
 package org.openbot.tracking;
 
 import static java.lang.Math.abs;
+import static java.lang.Math.sqrt;
 
 import android.content.Context;
 import android.graphics.Canvas;
@@ -85,6 +86,8 @@ public class MultiBoxTracker {
   private ByteTracker byteTracker = new ByteTracker();
 
   private float speedEma = 0.0F;
+
+  private Control lastControl = null;
 
   public MultiBoxTracker(final Context context) {
     byteTracker.init(10, 50); // TODO wuyijun 待优化
@@ -252,11 +255,11 @@ public class MultiBoxTracker {
       // Make sure object center is in frame
       centerX = Math.max(0.0f, Math.min(centerX, imgWidth));
       // Scale relative position along x-axis between -1 and 1
-      float fovDegree = 70.0f;
+      float fovDegree = 50.0f;
       float temp = 1.0f - 2.0f * (centerX / imgWidth);
-      float x_pos_norm = temp; //(temp + servoAngle / fovDegree) / (1 + 90/fovDegree);
-      float angleAdjustSpeed = 0.5f;
-      float servoAngleChange = angleAdjustSpeed * (- x_pos_norm);
+      float x_pos_norm = (temp + servoAngle * 180/fovDegree) / (1 + 180/fovDegree);
+      float angleAdjustSpeed = 0.06f;
+      float servoAngleChange = angleAdjustSpeed * ( temp);
       this.servoAngle = servoAngle + servoAngleChange;
       this.servoAngle = Math.max(-1.0f, Math.min(this.servoAngle, 1.0f));
       // Make sure object center is in frame
@@ -289,7 +292,7 @@ public class MultiBoxTracker {
         float scaleFactor = 1.0f - boxArea / (frameWidth * frameHeight);
         float speedFactor = scaleFactor > 0.75f ? 1.0f : (scaleFactor + 0.25f); // tracked object far, full speed
         // apply scale factor if tracked object is not too near, otherwise stop
-        if (fastTurn) {
+        if (fastTurn && false) {
           leftControl *= speedFactor * 1.05;
           rightControl *= speedFactor * 1.05;
 
@@ -316,7 +319,7 @@ public class MultiBoxTracker {
             speedEma = speedEma * (1 - alpha) + mean * alpha;
           }
         } else {
-          if (scaleFactor > 0.25f) {
+          if (scaleFactor > 0.15f) {
             leftControl *= scaleFactor;
             rightControl *= scaleFactor;
           } else {
@@ -333,6 +336,87 @@ public class MultiBoxTracker {
     return new Control(
         (0 > sensorOrientation) ? rightControl : leftControl,
         (0 > sensorOrientation) ? leftControl : rightControl,
+            this.servoAngle);
+  }
+
+  public synchronized Control updateTarget2(boolean fastTurn, float servoAngle) {
+    if (!trackedObjects.isEmpty()) {
+      // Pick detection with highest probability
+      final RectF trackedPos = new RectF(trackedObjects.get(0).location);
+      final boolean rotated = sensorOrientation % 180 == 90;
+      float imgWidth = (float) (rotated ? frameHeight : frameWidth);
+      // calculate track box area for distance estimate
+      float boxArea = trackedPos.height() * trackedPos.width();
+      float percent = boxArea / (frameWidth * frameHeight);
+      float fovVert = 70.0f;
+      float distanceEst = (float) (1.8 * (sqrt(3.0) / 2.0) / (percent / 0.5f) / (fovVert / 60.0f)); // 1.8 meter high, 60 fov, 0.5 percent -> distance =
+      float centerX = (rotated ? trackedPos.centerY() : trackedPos.centerX());
+      float leftX = (rotated ? trackedPos.top : trackedPos.left);
+      float rightX = (rotated ? trackedPos.bottom : trackedPos.right);
+      // Make sure object center is in frame
+      centerX = Math.max(0.0f, Math.min(centerX, imgWidth));
+      // Scale relative position along x-axis between -1 and 1
+      float fovHoriz = 50.0f;
+      float x_pos_norm_raw = 1.0f - 2.0f * (centerX / imgWidth);
+      float directionEstWithinImg = (float) (Math.atan(x_pos_norm_raw) / (Math.PI / 4) * fovHoriz / 2);
+      float directionEst = directionEstWithinImg + servoAngle;
+      float x_pos_norm = (x_pos_norm_raw + servoAngle * 180 / fovHoriz) / (1 + 180 / fovHoriz);
+      float angleAdjustSpeed = 0.06f;
+      float servoAngleChange = angleAdjustSpeed * (x_pos_norm_raw);
+      this.servoAngle = servoAngle + servoAngleChange;
+      this.servoAngle = Math.max(-1.0f, Math.min(this.servoAngle, 1.0f));
+
+      // --- 物理和目标参数 ---
+      final double WHEEL_BASE = 0.16;     // 您的车宽，单位：米
+      final double MAX_SPEED = 1.0;       // 电机最大速度，单位：米/秒
+      final double TARGET_DISTANCE = 0.4; // 期望保持的距离，单位：米
+
+      // --- PID 增益参数 (这些是调优的关键，需要大量实验!) ---
+      // 建议的调优顺序:
+      // 1. 先设置 Ki 和 Kd 为 0，只调整 Kp 得到一个大致可用的效果 (可能会震荡)。
+      // 2. 逐渐增加 Kd 来抑制震荡，使动作平滑。
+      // 3. 如果有稳态误差（总是差一点才到目标），再慢慢增加 Ki 来消除它。
+
+      // 距离PID增益
+      final double KP_D = 0.8;
+      final double KI_D = 0.05;
+      final double KD_D = 0.1;
+
+      // 角度PID增益
+      final double KP_A = 2.5;
+      final double KI_A = 0.1;
+      final double KD_A = 0.3;
+
+      // 角度PID增益
+      final double KP_SA = 2.5;
+      final double KI_SA = 0.1;
+      final double KD_SA = 0.3;
+
+      // 创建机器人控制器实例
+      PIDController robot = new PIDController(
+              WHEEL_BASE, MAX_SPEED, TARGET_DISTANCE,
+              KP_D, KI_D, KD_D,
+              KP_A, KI_A, KD_A,
+              KP_SA, KI_SA, KD_SA
+      );
+
+      // System.out.println("PID机器人控制器启动，按 Ctrl+C 停止。");
+
+      TargetInfo targetInfo = new TargetInfo(distanceEst, x_pos_norm);
+      Control control = robot.update(targetInfo, lastControl);
+      lastControl = control;
+
+      // 保持稳定的控制频率，例如100ms -> 10Hz
+      // Thread.sleep(100);
+
+      leftControl = control.getLeft();
+      rightControl = control.getRight();
+      this.servoAngle = control.getServoAngle();
+    }
+
+    return new Control(
+            (0 > sensorOrientation) ? rightControl : leftControl,
+            (0 > sensorOrientation) ? leftControl : rightControl,
             this.servoAngle);
   }
 
