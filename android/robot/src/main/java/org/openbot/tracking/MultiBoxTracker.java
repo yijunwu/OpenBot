@@ -231,7 +231,7 @@ public class MultiBoxTracker {
   }
 
   public synchronized Control updateTarget(boolean fastTurn) {
-    return updateTarget(false, 0.0f);
+    return updateTarget2(false, 0.0f);
   }
 
   /**

@@ -641,7 +641,7 @@ public class ObjectNavFragment extends CameraFragment {
 
               boolean byteTrack = binding.byteTrackToggle.isChecked();
               tracker.trackResults(mappedRecognitions, frameNum, true);
-              Control target = tracker.updateTarget(byteTrack, vehicle.getControl().getServoAngle());
+              Control target = tracker.updateTarget2(byteTrack, vehicle.getControl().getServoAngle());
               if (mirrorControl) {
                 handleDriveCommand(target.mirror());
               } else {
