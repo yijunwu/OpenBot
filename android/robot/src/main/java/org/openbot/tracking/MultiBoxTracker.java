@@ -87,6 +87,8 @@ public class MultiBoxTracker {
 
   private float speedEma = 0.0F;
 
+  private RobotController robot = new RobotController();
+
   private Control lastControl = null;
 
   public MultiBoxTracker(final Context context) {
@@ -366,40 +368,6 @@ public class MultiBoxTracker {
       this.servoAngle = servoAngle + servoAngleChange;
       this.servoAngle = Math.max(-1.0f, Math.min(this.servoAngle, 1.0f));
 
-      // --- 物理和目标参数 ---
-      final double WHEEL_BASE = 0.16;     // 您的车宽，单位：米
-      final double MAX_SPEED = 1.0;       // 电机最大速度，单位：米/秒
-      final double TARGET_DISTANCE = 0.4; // 期望保持的距离，单位：米
-
-      // --- PID 增益参数 (这些是调优的关键，需要大量实验!) ---
-      // 建议的调优顺序:
-      // 1. 先设置 Ki 和 Kd 为 0，只调整 Kp 得到一个大致可用的效果 (可能会震荡)。
-      // 2. 逐渐增加 Kd 来抑制震荡，使动作平滑。
-      // 3. 如果有稳态误差（总是差一点才到目标），再慢慢增加 Ki 来消除它。
-
-      // 距离PID增益
-      final double KP_D = 0.8;
-      final double KI_D = 0.05;
-      final double KD_D = 0.1;
-
-      // 角度PID增益
-      final double KP_A = 2.5;
-      final double KI_A = 0.1;
-      final double KD_A = 0.3;
-
-      // 角度PID增益
-      final double KP_SA = 2.5;
-      final double KI_SA = 0.1;
-      final double KD_SA = 0.3;
-
-      // 创建机器人控制器实例
-      PIDController robot = new PIDController(
-              WHEEL_BASE, MAX_SPEED, TARGET_DISTANCE,
-              KP_D, KI_D, KD_D,
-              KP_A, KI_A, KD_A,
-              KP_SA, KI_SA, KD_SA
-      );
-
       // System.out.println("PID机器人控制器启动，按 Ctrl+C 停止。");
 
       TargetInfo targetInfo = new TargetInfo(distanceEst, x_pos_norm);
@@ -409,9 +377,11 @@ public class MultiBoxTracker {
       // 保持稳定的控制频率，例如100ms -> 10Hz
       // Thread.sleep(100);
 
-      leftControl = control.getLeft();
-      rightControl = control.getRight();
-      this.servoAngle = control.getServoAngle();
+      if (control != null) {
+        leftControl = control.getLeft();
+        rightControl = control.getRight();
+        this.servoAngle = control.getServoAngle();
+      }
     }
 
     return new Control(

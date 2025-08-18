@@ -46,12 +46,12 @@ public class PIDController {
         // 1. 计算时间差 (dt)，单位为秒
         long currentTimeNanos = System.nanoTime();
         double dt = (currentTimeNanos - lastUpdateTimeNanos) / 1_000_000_000.0;
-        lastUpdateTimeNanos = currentTimeNanos;
 
         // 如果dt为0或过大（例如首次运行或暂停后），则跳过本次计算防止异常
-        if (dt <= 0 || dt > 0.5) {
+        if (dt <= 0.001 || dt > 0.5 && false) {
             return lastControl;
         }
+        lastUpdateTimeNanos = currentTimeNanos;
 
         // 2. 获取传感器数据
         //TargetInfo target = sensor.getTargetInfo();
@@ -59,7 +59,7 @@ public class PIDController {
         // 3. 计算误差
         double errorDistance = target.getDistance() - this.targetDistance;
         double errorAngle = target.getAngle();
-        double servoAngle = lastControl.getServoAngle();
+        double servoAngle = lastControl == null ? 0 : lastControl.getServoAngle();
         double errorServoAngle = target.getAngle() - servoAngle;
 
         // 4. 使用PID控制器计算期望的线速度和角速度
@@ -74,6 +74,8 @@ public class PIDController {
         // 6. 速度限制
         v_R = Math.max(-this.maxSpeed, Math.min(v_R, this.maxSpeed));
         v_L = Math.max(-this.maxSpeed, Math.min(v_L, this.maxSpeed));
+
+        boolean b = !Double.isFinite(servoAngle) || !Double.isFinite(omegaServo) || !Float.isFinite((float) (servoAngle + omegaServo));
 
         // 7. 返回结果
         return new Control((float)v_L, (float)v_R, (float)(servoAngle + omegaServo));

@@ -37,14 +37,14 @@ class WebsocketProtocol(private val deviceInfo: DeviceInfo,
         // Log.i(TAG, "Sending audio: ${data.size}")
         websocket?.run {
             send(ByteString.of(*data))
-        } ?: Log.e(TAG, "WebSocket is null")
+        } ?: Log.e(TAG, "Failed to send audio: WebSocket is null")
     }
 
     override suspend fun sendText(text: String) {
         Log.i(TAG, "Sending text: $text")
         websocket?.run {
             send(text)
-        } ?: Log.e(TAG, "WebSocket is null")
+        } ?: Log.e(TAG, "Failed to send text: WebSocket is null")
     }
 
     override fun isAudioChannelOpened(): Boolean {
