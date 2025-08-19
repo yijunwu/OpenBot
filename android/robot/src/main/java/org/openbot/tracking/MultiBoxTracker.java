@@ -382,12 +382,13 @@ public class MultiBoxTracker {
         rightControl = control.getRight();
         this.servoAngle = control.getServoAngle();
       }
+      return new Control(
+              (0 > sensorOrientation) ? rightControl : leftControl,
+              (0 > sensorOrientation) ? leftControl : rightControl,
+              this.servoAngle);
+    } else {
+      return new Control(0, 0, this.servoAngle);
     }
-
-    return new Control(
-            (0 > sensorOrientation) ? rightControl : leftControl,
-            (0 > sensorOrientation) ? leftControl : rightControl,
-            this.servoAngle);
   }
 
   public synchronized void draw(final Canvas canvas) {
