@@ -643,9 +643,9 @@ public class ObjectNavFragment extends CameraFragment {
               tracker.trackResults(mappedRecognitions, frameNum, true);
               Control target = tracker.updateTarget2(byteTrack, vehicle.getControl().getServoAngle());
               if (mirrorControl) {
-                handleDriveCommand(target.mirror());
+                handleDriveCommand(target.adaptDirection().mirror());
               } else {
-                handleDriveCommand(target);
+                handleDriveCommand(target.adaptDirection());
               }
               binding.trackingOverlay.postInvalidate();
             }

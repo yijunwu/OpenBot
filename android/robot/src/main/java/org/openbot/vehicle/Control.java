@@ -30,4 +30,9 @@ public class Control {
   public Control mirror() {
     return new Control(this.right, this.left, - this.servoAngle);
   }
+
+  public Control adaptDirection() {
+    return new Control(this.right, this.left, this.servoAngle);
+  }
+
 }
