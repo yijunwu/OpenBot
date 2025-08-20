@@ -372,6 +372,9 @@ public class MultiBoxTracker {
 
       TargetInfo targetInfo = new TargetInfo(distanceEst, directionEst);
       Control control = robot.update(targetInfo, lastControl);
+      if (Math.abs(control.getServoAngle()) > 1) {
+        control = new Control(control.getLeft(), control.getRight(), control.getServoAngle() > 0 ? 1 : -1);
+      }
       lastControl = control;
 
       // 保持稳定的控制频率，例如100ms -> 10Hz
