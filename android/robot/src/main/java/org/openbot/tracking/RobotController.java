@@ -20,7 +20,7 @@ public class RobotController {
     final double KD_D = 0.0;
 
     // 角度PID增益
-    final double KP_A = 25; //1.25;
+    final double KP_A = 10; //1.25;
     final double KI_A = 0.0;
     final double KD_A = 0.0;
 

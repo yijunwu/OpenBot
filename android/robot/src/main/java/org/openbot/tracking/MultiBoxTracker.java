@@ -360,17 +360,17 @@ public class MultiBoxTracker {
       // Scale relative position along x-axis between -1 and 1
       float fovHoriz = 50.0f;
       float x_pos_norm_raw = 1.0f - 2.0f * (centerX / imgWidth);
-      float directionEstWithinImg = (float) (Math.atan(x_pos_norm_raw) / (Math.PI / 4) * fovHoriz / 2);
+      float directionEstWithinImg = (float) (Math.atan(x_pos_norm_raw) / (Math.PI / 4) * fovHoriz / 2 / 180);
       float directionEst = directionEstWithinImg + servoAngle;
       float x_pos_norm = (x_pos_norm_raw + servoAngle * 180 / fovHoriz) / (1 + 180 / fovHoriz);
-      float angleAdjustSpeed = 0.06f;
-      float servoAngleChange = angleAdjustSpeed * (x_pos_norm_raw);
-      this.servoAngle = servoAngle + servoAngleChange;
-      this.servoAngle = Math.max(-1.0f, Math.min(this.servoAngle, 1.0f));
+      //float angleAdjustSpeed = 0.06f;
+      //float servoAngleChange = angleAdjustSpeed * (x_pos_norm_raw);
+      //this.servoAngle = servoAngle + servoAngleChange;
+      //this.servoAngle = Math.max(-1.0f, Math.min(this.servoAngle, 1.0f));
 
       // System.out.println("PID机器人控制器启动，按 Ctrl+C 停止。");
 
-      TargetInfo targetInfo = new TargetInfo(distanceEst, x_pos_norm);
+      TargetInfo targetInfo = new TargetInfo(distanceEst, directionEst);
       Control control = robot.update(targetInfo, lastControl);
       lastControl = control;
 

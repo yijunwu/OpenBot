@@ -443,7 +443,7 @@ public class Vehicle {
     if (noiseEnabled && noise.getDirection() > 0)
       right = (int) ((control.getRight() - noise.getValue()) * speedMultiplier);
 
-    sendStringToDevice(String.format(Locale.US, "c%d,%d,%d\n", left, right,servoAngle));
+    sendStringToDevice(String.format(Locale.US, "c%d,%d,%d\n", left, right, servoAngle));
   }
 
   protected void sendHeartbeat(int timeout_ms) {
