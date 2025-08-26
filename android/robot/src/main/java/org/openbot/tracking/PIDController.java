@@ -72,8 +72,16 @@ public class PIDController {
         double v_L = v - (omega * this.wheelBase) / 2.0;
 
         // 6. 速度限制
-        v_R = Math.max(-this.maxSpeed, Math.min(v_R, this.maxSpeed));
-        v_L = Math.max(-this.maxSpeed, Math.min(v_L, this.maxSpeed));
+//        v_R = Math.max(-this.maxSpeed, Math.min(v_R, this.maxSpeed));
+//        v_L = Math.max(-this.maxSpeed, Math.min(v_L, this.maxSpeed));
+        if (v_R > this.maxSpeed && v_L > 0) {
+            v_R = this.maxSpeed;
+            v_L = v_R - (omega * this.wheelBase);
+        }
+        if (v_L > this.maxSpeed && v_R > 0) {
+            v_L = this.maxSpeed;
+            v_R = v_L + (omega * this.wheelBase);
+        }
 
         boolean b = !Double.isFinite(servoAngle) || !Double.isFinite(omegaServo) || !Float.isFinite((float) (servoAngle + omegaServo));
 
