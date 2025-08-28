@@ -17,6 +17,7 @@ limitations under the License.
 
 package org.openbot.tracking;
 
+import static java.lang.Math.PI;
 import static java.lang.Math.abs;
 import static java.lang.Math.sqrt;
 
@@ -360,8 +361,8 @@ public class MultiBoxTracker {
       // Scale relative position along x-axis between -1 and 1
       float fovHoriz = 50.0f;
       float x_pos_norm_raw = 1.0f - 2.0f * (centerX / imgWidth);
-      float directionEstWithinImg = (float) (Math.atan(x_pos_norm_raw) / (Math.PI / 4) * fovHoriz / 2 / 180);
-      float directionEst = directionEstWithinImg + (float)(servoAngle / 2.0 * Math.PI);
+      float directionEstWithinImg = (float) (Math.atan(x_pos_norm_raw) / (PI / 4) * fovHoriz / 2 / 180);
+      float directionEst = directionEstWithinImg + (float)(servoAngle * (PI / 2.0));
       float x_pos_norm = (x_pos_norm_raw + servoAngle * 180 / fovHoriz) / (1 + 180 / fovHoriz);
       //float angleAdjustSpeed = 0.06f;
       //float servoAngleChange = angleAdjustSpeed * (x_pos_norm_raw);
@@ -370,20 +371,25 @@ public class MultiBoxTracker {
 
       // System.out.println("PID机器人控制器启动，按 Ctrl+C 停止。");
 
-      TargetInfo targetInfo = new TargetInfo(distanceEst, directionEst / (Math.PI / 2));
-      Control control = robot.update(targetInfo, lastControl);
-      if (Math.abs(control.getServoAngle()) > 1) {
-        control = new Control(control.getLeft(), control.getRight(), control.getServoAngle() > 0 ? 1 : -1);
+      TargetInfo targetInfo = new TargetInfo(distanceEst, directionEst);
+      Control lastControlInArc = null;
+      if (lastControl != null) {
+        lastControlInArc = new Control(lastControl.getLeft(), lastControl.getRight(), (float) (lastControl.getServoAngle() * PI / 2.0));
       }
-      lastControl = control;
-
-      // 保持稳定的控制频率，例如100ms -> 10Hz
-      // Thread.sleep(100);
-
+      Control control = robot.update(targetInfo, lastControlInArc);
       if (control != null) {
-        leftControl = control.getLeft();
-        rightControl = control.getRight();
-        this.servoAngle = control.getServoAngle();
+        Control normalizedControl = new Control(control.getLeft(), control.getRight(), (float)(control.getServoAngle() / (PI / 2.0)));
+        if (Math.abs(normalizedControl.getServoAngle()) > 1) {
+          normalizedControl = new Control(normalizedControl.getLeft(), normalizedControl.getRight(), normalizedControl.getServoAngle() > 0 ? 1 : -1);
+        }
+        lastControl = normalizedControl;
+
+        // 保持稳定的控制频率，例如100ms -> 10Hz
+        // Thread.sleep(100);
+
+        leftControl = normalizedControl.getLeft();
+        rightControl = normalizedControl.getRight();
+        this.servoAngle = normalizedControl.getServoAngle();
       }
       return new Control(
               (0 > sensorOrientation) ? rightControl : leftControl,
