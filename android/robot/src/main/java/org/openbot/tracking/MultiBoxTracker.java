@@ -361,7 +361,7 @@ public class MultiBoxTracker {
       float fovHoriz = 50.0f;
       float x_pos_norm_raw = 1.0f - 2.0f * (centerX / imgWidth);
       float directionEstWithinImg = (float) (Math.atan(x_pos_norm_raw) / (Math.PI / 4) * fovHoriz / 2 / 180);
-      float directionEst = directionEstWithinImg + servoAngle;
+      float directionEst = directionEstWithinImg + (float)(servoAngle / 2.0 * Math.PI);
       float x_pos_norm = (x_pos_norm_raw + servoAngle * 180 / fovHoriz) / (1 + 180 / fovHoriz);
       //float angleAdjustSpeed = 0.06f;
       //float servoAngleChange = angleAdjustSpeed * (x_pos_norm_raw);
@@ -370,7 +370,7 @@ public class MultiBoxTracker {
 
       // System.out.println("PID机器人控制器启动，按 Ctrl+C 停止。");
 
-      TargetInfo targetInfo = new TargetInfo(distanceEst, directionEst);
+      TargetInfo targetInfo = new TargetInfo(distanceEst, directionEst / (Math.PI / 2));
       Control control = robot.update(targetInfo, lastControl);
       if (Math.abs(control.getServoAngle()) > 1) {
         control = new Control(control.getLeft(), control.getRight(), control.getServoAngle() > 0 ? 1 : -1);
