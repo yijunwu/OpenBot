@@ -372,12 +372,12 @@ public class MultiBoxTracker {
       float fovHoriz = 50.0f;
       float x_pos_norm_raw = 1.0f - 2.0f * (centerX / imgWidth);
       float directionEstWithinImg = (float) (Math.atan(x_pos_norm_raw) / (PI / 4) * fovHoriz / 2 / 180);
-      boolean goingOutOfFOV = false;
-      if (abs(x_pos_norm_raw) > 0.6 && left_norm * right_norm > 0 && (abs(left_norm) < 0.05 || abs(left_norm) > 0.95 || abs(right_norm) < 0.05 || abs(right_norm) > 0.95)) {
-        goingOutOfFOV = true;
+      float goingOutOfFOV = 0.0F;
+      if (abs(x_pos_norm_raw) > 0.5 && left_norm * right_norm > 0 && (abs(left_norm) > 0.95 || abs(right_norm) > 0.95)) {
+        goingOutOfFOV = abs(x_pos_norm_raw);
       }
       float frictionFactor = 1.0F; // 户外粗糙水泥地面1.0，室内地板0.8，室内光滑地砖0.6
-      float turnSensitivity = (goingOutOfFOV ? 1.3F : 1.0F) * frictionFactor;
+      float turnSensitivity = (1 + goingOutOfFOV / 3.0F) * frictionFactor;
       float directionEst = directionEstWithinImg * turnSensitivity + (float)(servoAngle * (PI / 2.0));
       float x_pos_norm = (x_pos_norm_raw + servoAngle * 180 / fovHoriz) / (1 + 180 / fovHoriz);
       //float angleAdjustSpeed = 0.06f;
