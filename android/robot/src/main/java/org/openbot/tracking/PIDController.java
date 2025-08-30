@@ -48,8 +48,8 @@ public class PIDController {
         double dt = (currentTimeNanos - lastUpdateTimeNanos) / 1_000_000_000.0;
 
         // 如果dt为0或过大（例如首次运行或暂停后），则跳过本次计算防止异常
-        if (dt <= 0.001 || dt > 0.5 && false) {
-            return lastControl;
+        if (dt <= 0.001 || dt > 0.5) {
+            dt = 0;
         }
         lastUpdateTimeNanos = currentTimeNanos;
 

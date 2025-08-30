@@ -40,7 +40,7 @@ public class PIDCalculator {
         double i_out = ki * integral;
 
         // D (微分项): 反应误差变化率，用于抑制震荡，提供预见性
-        double derivative = (dt > 0) ? (error - lastError) / dt : 0;
+        double derivative = (dt >= 0.0001) ? (error - lastError) / dt : 0;
         double d_out = kd * derivative;
 
         // 更新上一次误差
