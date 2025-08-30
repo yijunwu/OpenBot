@@ -36,7 +36,17 @@ public class PIDCalculator {
 
         // I (积分项): 累加误差，用于消除稳态误差
         // 注意：为防止积分饱和(integral windup), 在实际项目中可能需要对integral值进行限制
-        integral += error * dt;
+
+        /**
+         * 尝试指数移动平均计算器。
+         *         :param alpha: 平滑常数 (0 < alpha <= 1)。
+         *                       alpha越小，历史数据权重越大，曲线越平滑。
+         *                       alpha越大，近期数据权重越大，曲线越敏感。
+         *                       常用的alpha计算方式是 2 / (N + 1)，N为周期。
+         *                       例如，N=19时，alpha=0.1。
+         */
+        double alpha = 0.1;
+        integral = integral * (1 - 0.1) + error * dt * alpha;
         double i_out = ki * integral;
 
         // D (微分项): 反应误差变化率，用于抑制震荡，提供预见性
