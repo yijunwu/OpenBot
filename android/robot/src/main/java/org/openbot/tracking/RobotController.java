@@ -25,9 +25,9 @@ public class RobotController {
     final double KD_A = 1.0; //0.0;
 
     // 舵机角度PID增益
-    final double KP_SA = 0.7; //0.20; //0.25;
+    final double KP_SA = 0.45; //0.20; //0.25;
     final double KI_SA = 0.0;
-    final double KD_SA = 0.05; //0.06; //0.05;
+    final double KD_SA = 0.045; //0.06; //0.05;
 
     // 创建机器人控制器实例
     PIDController robot = new PIDController(
