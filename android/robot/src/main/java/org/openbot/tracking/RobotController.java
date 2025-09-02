@@ -6,7 +6,7 @@ public class RobotController {
     // --- 物理和目标参数 ---
     final double WHEEL_BASE = 0.14;     // 您的车宽，单位：米
     final double MAX_SPEED = 1.0;       // 电机最大速度，单位：米/秒
-    final double TARGET_DISTANCE = 0.7; // 0.4 // 期望保持的距离，单位：米
+    final double TARGET_DISTANCE = 0.65; // 0.4 // 期望保持的距离，单位：米
 
     // --- PID 增益参数 (这些是调优的关键，需要大量实验!) ---
     // 建议的调优顺序:
