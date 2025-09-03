@@ -6,7 +6,7 @@ public class RobotController {
     // --- 物理和目标参数 ---
     final double WHEEL_BASE = 0.14;     // 您的车宽，单位：米
     final double MAX_SPEED = 1.0;       // 电机最大速度，单位：米/秒
-    final double TARGET_DISTANCE = 0.65; // 0.4 // 期望保持的距离，单位：米
+    final double TARGET_DISTANCE = 0.6; // 0.4 // 期望保持的距离，单位：米
 
     // --- PID 增益参数 (这些是调优的关键，需要大量实验!) ---
     // 建议的调优顺序:
@@ -15,9 +15,9 @@ public class RobotController {
     // 3. 如果有稳态误差（总是差一点才到目标），再慢慢增加 Ki 来消除它。
 
     // 车辆距离PID增益
-    final double KP_D = 0.6; //0.4; //0.8;
+    final double KP_D = 0.55; //0.4; //0.8;
     final double KI_D = 0.0;
-    final double KD_D = 0.06; //0.0;
+    final double KD_D = 0.055; //0.0;
 
     // 车辆角度PID增益
     final double KP_A = 8; //10; //1.25;
