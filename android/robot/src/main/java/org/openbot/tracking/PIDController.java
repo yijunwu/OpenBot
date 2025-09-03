@@ -86,8 +86,8 @@ public class PIDController {
             v_L = this.maxSpeed;
             v_R = v_L + (omega * this.wheelBase);
         }
-        if (abs(omegaServo) > (2.0 / 180.0 * PI / 0.1) * 1.5 * dt) {
-            omegaServo = signum(omegaServo) * 2.0 / 180.0 * PI / 0.1 * 1.5 * dt;
+        if (abs(omegaServo) > (1.5 / 180.0 * PI / 0.1) * 1.5 * dt) {
+            omegaServo = signum(omegaServo) * 1.5 / 180.0 * PI / 0.1 * 1.5 * dt;
         }
 
         boolean b = !Double.isFinite(servoAngle) || !Double.isFinite(omegaServo) || !Float.isFinite((float) (servoAngle + omegaServo));
