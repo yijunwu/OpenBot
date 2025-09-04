@@ -69,7 +69,7 @@ public class PIDController {
         // 4. 使用PID控制器计算期望的线速度和角速度
         double v = distanceCalculator.calculate(errorDistance, dt);
         double omega = angleCalculator.calculate(errorAngle, dt);
-        double omegaServo = servoAngleCalculator.calculate(errorServoAngle, dt) - omega * 0.01; //0.001 ~ 0.1
+        double omegaServo = servoAngleCalculator.calculate(errorServoAngle, dt) - omega * 0.005; //0.001 ~ 0.1
 
         // 5. 逆向运动学解算 -> 得到左右轮速度
         double v_R = v + (omega * this.wheelBase) / 2.0;
