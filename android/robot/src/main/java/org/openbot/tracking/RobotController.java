@@ -20,9 +20,9 @@ public class RobotController {
     final double KD_D = 0.055; //0.0;
 
     // 车辆角度PID增益
-    final double KP_A = 8; //10; //1.25;
+    final double KP_A = 9; //10; //1.25;
     final double KI_A = 0.0;
-    final double KD_A = 0.8; //0.0;
+    final double KD_A = 0.9; //0.0;
 
     // 舵机角度PID增益
     final double KP_SA = 0.8; //0.20; //0.25;
