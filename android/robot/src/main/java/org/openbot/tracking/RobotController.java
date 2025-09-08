@@ -15,9 +15,9 @@ public class RobotController {
     // 3. 如果有稳态误差（总是差一点才到目标），再慢慢增加 Ki 来消除它。
 
     // 车辆距离PID增益
-    final double KP_D = 0.45; //0.4; //0.8;
+    final double KP_D = 0.4; //0.4; //0.8;
     final double KI_D = 0.0;
-    final double KD_D = 0.045; //0.0;
+    final double KD_D = 0.04; //0.0;
 
     // 车辆角度PID增益
     final double KP_A = 9; //10; //1.25;
