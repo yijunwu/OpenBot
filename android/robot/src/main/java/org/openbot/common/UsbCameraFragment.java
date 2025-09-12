@@ -1,21 +1,21 @@
 package org.openbot.common;
 
 import android.os.Bundle;
-import android.util.Range;
 import android.util.Size;
 import android.view.LayoutInflater;
-import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.Toast;
 
 import com.jiangdg.ausbc.MultiCameraClient;
-import com.jiangdg.ausbc.base.CameraFragment;
 import com.jiangdg.ausbc.widget.AspectRatioTextureView;
 import com.jiangdg.ausbc.widget.IAspectRatio;
 
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.viewbinding.ViewBinding;
 
 import org.openbot.R;
 
@@ -56,7 +56,7 @@ public class UsbCameraFragment extends com.jiangdg.ausbc.base.CameraFragment {
     super.onViewCreated(view, savedInstanceState);
 
     // 2. 專心處理自己藍圖裡的元件
-    Button childButton = view.findViewById(R.id.child_button);
+    Button childButton = view.findViewById(View.NO_ID/* TODO wuyijun, R.id.child_button*/);
     childButton.setOnClickListener(v -> {
       Toast.makeText(getContext(), "子 Fragment 的按鈕被點擊了！", Toast.LENGTH_SHORT).show();
     });
@@ -77,5 +77,21 @@ public class UsbCameraFragment extends com.jiangdg.ausbc.base.CameraFragment {
   @Override
   public void onCameraState(@NonNull MultiCameraClient.ICamera iCamera, @NonNull State state, @Nullable String s) {
 
+  }
+
+  public void toggleCamera() {
+    throw new UnsupportedOperationException("Not implemented"); // TODO wuyijun, 待实现
+  }
+
+  public void setAnalyserResolution(Size resolutionSize) {
+    throw new UnsupportedOperationException("Not implemented"); // TODO wuyijun, 待实现
+  }
+
+  public View inflateFragment(int resId, LayoutInflater inflater, ViewGroup container) {
+    throw new UnsupportedOperationException("Not implemented"); // TODO wuyijun, 待实现
+  }
+
+  public View inflateFragment(ViewBinding viewBinding, LayoutInflater inflater, ViewGroup container) {
+    throw new UnsupportedOperationException("Not implemented"); // TODO wuyijun, 待实现
   }
 }

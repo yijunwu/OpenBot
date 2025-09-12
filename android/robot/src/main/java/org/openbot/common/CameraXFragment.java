@@ -31,6 +31,7 @@ import androidx.camera.core.Preview;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
 import androidx.core.content.ContextCompat;
+import androidx.fragment.app.Fragment;
 import androidx.viewbinding.ViewBinding;
 
 import com.google.common.util.concurrent.ListenableFuture;
@@ -38,11 +39,12 @@ import com.google.common.util.concurrent.ListenableFuture;
 import org.openbot.R;
 import org.openbot.env.BitmapFrameCapturer;
 import org.openbot.env.ImageUtils;
-import org.openbot.env.PhoneController;
+import org.openbot.env.SharedPreferencesManager;
 import org.openbot.utils.Constants;
 import org.openbot.utils.Enums;
 import org.openbot.utils.PermissionUtils;
 import org.openbot.utils.YuvToRgbConverter;
+import org.webrtc.VideoCapturer;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -54,7 +56,7 @@ import java.util.concurrent.Executors;
 
 import timber.log.Timber;
 
-public class CameraXFragment extends ControlsFragment {
+public class CameraXFragment extends Fragment {
 
   private ExecutorService cameraExecutor;
   // for built-in cameras
@@ -71,6 +73,17 @@ public class CameraXFragment extends ControlsFragment {
   private Camera camera;
   private CameraControl cameraControl;
   private CameraInfo cameraInfo;
+
+  VideoCapturer videoCapturer;
+
+  SharedPreferencesManager preferencesManager;
+
+  @Override
+  public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                           Bundle savedInstanceState) {
+    // 1. 總承包商讀取自己的“主建築藍圖” // TODO wuyijun, clean up comments
+    return inflater.inflate(R.layout.fragment_camera_x, container, false);
+  }
 
   protected View inflateFragment(int resId, LayoutInflater inflater, ViewGroup container) {
     return addCamera(inflater.inflate(resId, container, false), inflater, container);
@@ -107,8 +120,6 @@ public class CameraXFragment extends ControlsFragment {
   public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
     super.onViewCreated(view, savedInstanceState);
     cameraExecutor = Executors.newSingleThreadExecutor();
-
-    phoneController = PhoneController.getInstance(requireContext(), videoCapturer);
   }
 
   @SuppressLint("RestrictedApi")
@@ -309,10 +320,8 @@ public class CameraXFragment extends ControlsFragment {
     bindCameraUseCases();
   }
 
-  @Override
-  protected boolean useBitmapVideoCapturer() {
-    return true;
+  protected void processFrame(Bitmap image, ImageProxy imageProxy) {
+    throw new UnsupportedOperationException("This method should NOT be called."); // TODO wuyijun, 待确认
   }
 
-  protected abstract void processFrame(Bitmap image, ImageProxy imageProxy);
 }
