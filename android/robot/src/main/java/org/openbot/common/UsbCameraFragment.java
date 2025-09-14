@@ -57,9 +57,11 @@ public class UsbCameraFragment extends com.jiangdg.ausbc.base.CameraFragment {
 
     // 2. 專心處理自己藍圖裡的元件
     Button childButton = view.findViewById(View.NO_ID/* TODO wuyijun, R.id.child_button*/);
-    childButton.setOnClickListener(v -> {
-      Toast.makeText(getContext(), "子 Fragment 的按鈕被點擊了！", Toast.LENGTH_SHORT).show();
-    });
+    if (childButton != null) {
+      childButton.setOnClickListener(v -> {
+        Toast.makeText(getContext(), "子 Fragment 的按鈕被點擊了！", Toast.LENGTH_SHORT).show();
+      });
+    }
   }
 
   // 2. 實現 libausbc 的抽象方法，告訴它在哪裡渲染預覽畫面

@@ -28,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
 import org.openbot.R;
 import org.openbot.common.CameraFragment;
+import org.openbot.common.FrameProcessor;
 import org.openbot.databinding.FragmentAutopilotBinding;
 import org.openbot.env.BorderedText;
 import org.openbot.env.ImageUtils;
@@ -176,6 +177,11 @@ public class AutopilotFragment extends CameraFragment {
                                         Enums.SpeedMode.getByID(preferencesManager.getSpeedMode()))));
 
         binding.autoSwitch.setOnClickListener(v -> setNetworkEnabled(binding.autoSwitch.isChecked()));
+    }
+
+    @Override
+    protected FrameProcessor getFrameProcessor() {
+        return this.frameProcessor;
     }
 
     private void updateCropImageInfo() {
@@ -400,42 +406,44 @@ public class AutopilotFragment extends CameraFragment {
 
     private long frameNum = 0;
 
-    @Override
-    protected void processFrame(Bitmap bitmap, ImageProxy image) {
-        if (tracker == null) updateCropImageInfo();
+    FrameProcessor frameProcessor = new FrameProcessor() {
+        @Override
+        public void processFrame(Bitmap bitmap, ImageProxy image) {
+            if (tracker == null) updateCropImageInfo();
 
-        ++frameNum;
-        if (binding != null && binding.autoSwitch.isChecked()) {
-            // If network is busy, return.
-            if (computingNetwork) {
-                return;
+            ++frameNum;
+            if (binding != null && binding.autoSwitch.isChecked()) {
+                // If network is busy, return.
+                if (computingNetwork) {
+                    return;
+                }
+
+                computingNetwork = true;
+                Timber.i("Putting image " + frameNum + " for detection in bg thread.");
+
+                runInBackground(
+                        () -> {
+                            final Canvas canvas = new Canvas(croppedBitmap);
+                            canvas.drawBitmap(bitmap, frameToCropTransform, null);
+
+                            if (autopilot != null) {
+                                Timber.i("Running autopilot on image %s", frameNum);
+                                final long startTime = SystemClock.elapsedRealtime();
+                                handleDriveCommand(autopilot.recognizeImage(croppedBitmap, vehicle.getIndicator()));
+                                lastProcessingTimeMs = SystemClock.elapsedRealtime() - startTime;
+                            }
+
+                            computingNetwork = false;
+                        });
+                if (lastProcessingTimeMs > 0)
+                    requireActivity()
+                            .runOnUiThread(
+                                    () ->
+                                            binding.inferenceInfo.setText(
+                                                    String.format(Locale.US, "%d fps", 1000 / lastProcessingTimeMs)));
             }
-
-            computingNetwork = true;
-            Timber.i("Putting image " + frameNum + " for detection in bg thread.");
-
-            runInBackground(
-                    () -> {
-                        final Canvas canvas = new Canvas(croppedBitmap);
-                        canvas.drawBitmap(bitmap, frameToCropTransform, null);
-
-                        if (autopilot != null) {
-                            Timber.i("Running autopilot on image %s", frameNum);
-                            final long startTime = SystemClock.elapsedRealtime();
-                            handleDriveCommand(autopilot.recognizeImage(croppedBitmap, vehicle.getIndicator()));
-                            lastProcessingTimeMs = SystemClock.elapsedRealtime() - startTime;
-                        }
-
-                        computingNetwork = false;
-                    });
-            if (lastProcessingTimeMs > 0)
-                requireActivity()
-                        .runOnUiThread(
-                                () ->
-                                        binding.inferenceInfo.setText(
-                                                String.format(Locale.US, "%d fps", 1000 / lastProcessingTimeMs)));
         }
-    }
+    };
 
     protected void handleDriveCommand(Control control) {
         vehicle.setControl(control);

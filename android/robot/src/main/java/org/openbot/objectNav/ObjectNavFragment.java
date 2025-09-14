@@ -39,6 +39,7 @@ import java.util.concurrent.TimeoutException;
 import org.jetbrains.annotations.NotNull;
 import org.openbot.R;
 import org.openbot.common.CameraFragment;
+import org.openbot.common.FrameProcessor;
 import org.openbot.databinding.FragmentObjectNavBinding;
 import org.openbot.env.BorderedText;
 import org.openbot.env.ImageUtils;
@@ -104,10 +105,11 @@ public class ObjectNavFragment extends CameraFragment {
   @Override
   public View onCreateView(
       @NotNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+      //super.onCreateView(inflater, container, savedInstanceState);
     // Inflate the layout for this fragment
     binding = FragmentObjectNavBinding.inflate(inflater, container, false);
-
-    return inflateFragment(binding, inflater, container);
+    return binding.getRoot();
+    //return inflateFragment(binding, inflater, container);
   }
 
   @Override
@@ -221,7 +223,7 @@ public class ObjectNavFragment extends CameraFragment {
         getModelNames(f -> f.type.equals(Model.TYPE.DETECTOR) && f.pathType != Model.PATH_TYPE.URL);
     initModelSpinner(binding.modelSpinner, models, preferencesManager.getObjectNavModel());
 
-    setAnalyserResolution(Enums.Preview.HD_4_3.getValue());
+    //setAnalyserResolution(Enums.Preview.HD_4_3.getValue()); // TODO wuyijun 待完善
     binding.deviceSpinner.setOnItemSelectedListener(
         new AdapterView.OnItemSelectedListener() {
           @Override
@@ -304,7 +306,24 @@ public class ObjectNavFragment extends CameraFragment {
         });
   }
 
-  private void executeScript(String script) {
+    @Override
+    public void onStart() {
+        super.onStart();
+        // 在 onResume 中，可以保证所有子 Fragment 的 View 都已准备就绪
+        // 可以在这里进行需要与子 Fragment 视图互动的操作
+        setupInteractionWithChildFragment();
+    }
+
+    private void setupInteractionWithChildFragment() {
+        setAnalyserResolution(Enums.Preview.HD_4_3.getValue());
+    }
+
+    @Override
+    protected FrameProcessor getFrameProcessor() {
+        return frameProcessor;
+    }
+
+    private void executeScript(String script) {
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
           CompletableFuture<Void> future = scriptExecutor.executeScriptAsync(script);
           try {
@@ -578,89 +597,91 @@ public class ObjectNavFragment extends CameraFragment {
     if (!b) handler.postDelayed(() -> vehicle.setControl(0, 0, 0), Math.max(lastProcessingTimeMs, 50));
   }
 
-  @Override
-  protected void processFrame(Bitmap bitmap, ImageProxy image) {
-    if (tracker == null) updateCropImageInfo();
+  FrameProcessor frameProcessor = new FrameProcessor() {
+      @Override
+      public void processFrame(Bitmap bitmap, ImageProxy image) {
+          if (tracker == null) updateCropImageInfo();
 
-    ++frameNum;
-    if (binding != null && binding.autoSwitch.isChecked()) {
-      // If network is busy, return.
-      if (computingNetwork) {
-        return;
-      }
-
-      computingNetwork = true;
-      Timber.i("Putting image " + frameNum + " for detection in bg thread.");
-
-      runInBackground(
-          () -> {
-            final Canvas canvas = new Canvas(croppedBitmap);
-            if (lensFacing == CameraSelector.LENS_FACING_FRONT) {
-              canvas.drawBitmap(
-                  CameraUtils.flipBitmapHorizontal(bitmap), frameToCropTransform, null);
-            } else {
-              canvas.drawBitmap(bitmap, frameToCropTransform, null);
-            }
-
-            if (detector != null) {
-              Timber.i("Running detection on image %s", frameNum);
-              final long startTime = SystemClock.elapsedRealtime();
-              final List<Detector.Recognition> results =
-                  detector.recognizeImage(croppedBitmap, classType);
-              lastProcessingTimeMs = SystemClock.elapsedRealtime() - startTime;
-
-              if (!results.isEmpty())
-                Timber.i(
-                    "Object: "
-                        + results.get(0).getLocation().centerX()
-                        + ", "
-                        + results.get(0).getLocation().centerY()
-                        + ", "
-                        + results.get(0).getLocation().height()
-                        + ", "
-                        + results.get(0).getLocation().width());
-
-              cropCopyBitmap = Bitmap.createBitmap(croppedBitmap);
-              final Canvas canvas1 = new Canvas(cropCopyBitmap);
-              final Paint paint = new Paint();
-              paint.setColor(Color.RED);
-              paint.setStyle(Paint.Style.STROKE);
-              paint.setStrokeWidth(2.0f);
-
-              final List<Detector.Recognition> mappedRecognitions = new LinkedList<>();
-
-              for (final Detector.Recognition result : results) {
-                final RectF location = result.getLocation();
-                if (location != null && result.getConfidence() >= MINIMUM_CONFIDENCE_TF_OD_API) {
-                  canvas1.drawRect(location, paint);
-                  cropToFrameTransform.mapRect(location);
-                  result.setLocation(location);
-                  mappedRecognitions.add(result);
-                }
+          ++frameNum;
+          if (binding != null && binding.autoSwitch.isChecked()) {
+              // If network is busy, return.
+              if (computingNetwork) {
+                  return;
               }
 
-              boolean byteTrack = binding.byteTrackToggle.isChecked();
-              tracker.trackResults(mappedRecognitions, frameNum, true);
-              Control target = tracker.updateTarget2(byteTrack, vehicle.getControl().getServoAngle());
-              if (mirrorControl) {
-                handleDriveCommand(target.adaptDirection().mirror());
-              } else {
-                handleDriveCommand(target.adaptDirection());
-              }
-              binding.trackingOverlay.postInvalidate();
-            }
+              computingNetwork = true;
+              Timber.i("Putting image " + frameNum + " for detection in bg thread.");
 
-            computingNetwork = false;
-          });
-      if (lastProcessingTimeMs > 0) {
-        if (isBenchmarkMode) {
-          double avgProcessingTimeMs = movingAvgProcessingTimeMs.next(lastProcessingTimeMs);
-          processedFrames += 1;
-          if (processedFrames >= movingAvgSize) updateFpsUi(avgProcessingTimeMs);
-        } else updateFpsUi(lastProcessingTimeMs);
+              runInBackground(
+                      () -> {
+                          final Canvas canvas = new Canvas(croppedBitmap);
+                          if (lensFacing == CameraSelector.LENS_FACING_FRONT) {
+                              canvas.drawBitmap(
+                                      CameraUtils.flipBitmapHorizontal(bitmap), frameToCropTransform, null);
+                          } else {
+                              canvas.drawBitmap(bitmap, frameToCropTransform, null);
+                          }
+
+                          if (detector != null) {
+                              Timber.i("Running detection on image %s", frameNum);
+                              final long startTime = SystemClock.elapsedRealtime();
+                              final List<Detector.Recognition> results =
+                                      detector.recognizeImage(croppedBitmap, classType);
+                              lastProcessingTimeMs = SystemClock.elapsedRealtime() - startTime;
+
+                              if (!results.isEmpty())
+                                  Timber.i(
+                                          "Object: "
+                                                  + results.get(0).getLocation().centerX()
+                                                  + ", "
+                                                  + results.get(0).getLocation().centerY()
+                                                  + ", "
+                                                  + results.get(0).getLocation().height()
+                                                  + ", "
+                                                  + results.get(0).getLocation().width());
+
+                              cropCopyBitmap = Bitmap.createBitmap(croppedBitmap);
+                              final Canvas canvas1 = new Canvas(cropCopyBitmap);
+                              final Paint paint = new Paint();
+                              paint.setColor(Color.RED);
+                              paint.setStyle(Paint.Style.STROKE);
+                              paint.setStrokeWidth(2.0f);
+
+                              final List<Detector.Recognition> mappedRecognitions = new LinkedList<>();
+
+                              for (final Detector.Recognition result : results) {
+                                  final RectF location = result.getLocation();
+                                  if (location != null && result.getConfidence() >= MINIMUM_CONFIDENCE_TF_OD_API) {
+                                      canvas1.drawRect(location, paint);
+                                      cropToFrameTransform.mapRect(location);
+                                      result.setLocation(location);
+                                      mappedRecognitions.add(result);
+                                  }
+                              }
+
+                              boolean byteTrack = binding.byteTrackToggle.isChecked();
+                              tracker.trackResults(mappedRecognitions, frameNum, true);
+                              Control target = tracker.updateTarget2(byteTrack, vehicle.getControl().getServoAngle());
+                              if (mirrorControl) {
+                                  handleDriveCommand(target.adaptDirection().mirror());
+                              } else {
+                                  handleDriveCommand(target.adaptDirection());
+                              }
+                              binding.trackingOverlay.postInvalidate();
+                          }
+
+                          computingNetwork = false;
+                      });
+              if (lastProcessingTimeMs > 0) {
+                  if (isBenchmarkMode) {
+                      double avgProcessingTimeMs = movingAvgProcessingTimeMs.next(lastProcessingTimeMs);
+                      processedFrames += 1;
+                      if (processedFrames >= movingAvgSize) updateFpsUi(avgProcessingTimeMs);
+                  } else updateFpsUi(lastProcessingTimeMs);
+              }
+          }
       }
-    }
-  }
+  };
 
   private void updateFpsUi(double processingTimeMs) {
     requireActivity()

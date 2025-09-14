@@ -22,6 +22,7 @@ import java.net.URL;
 
 import org.openbot.R;
 import org.openbot.common.CameraFragment;
+import org.openbot.common.FrameProcessor;
 import org.openbot.databinding.FragmentBarCodeScannerBinding;
 import org.openbot.utils.BotFunctionUtils;
 import org.json.JSONArray;
@@ -80,6 +81,11 @@ public class BarCodeScannerFragment extends CameraFragment {
       cameraToggle = true;
     }
     initialiseQrDetector();
+  }
+
+  @Override
+  protected FrameProcessor getFrameProcessor() {
+    return this.frameProcessor;
   }
 
   /** Define a BottomSheetCallback object for the success bottom sheet. */
@@ -145,10 +151,12 @@ public class BarCodeScannerFragment extends CameraFragment {
   @Override
   protected void processUSBData(String data) {}
 
-  @Override
-  protected void processFrame(Bitmap image, ImageProxy imageProxy) {
-    startQrDetection(image);
-  }
+  FrameProcessor frameProcessor = new FrameProcessor() {
+    @Override
+    public void processFrame(Bitmap image, ImageProxy imageProxy) {
+      startQrDetection(image);
+    }
+  };
 
   /** Initialize a new instance of the BarcodeDetector with all barcode formats supported. */
   private void initialiseQrDetector() {

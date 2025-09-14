@@ -32,6 +32,7 @@ import com.google.ar.core.TrackingFailureReason;
 
 import org.openbot.R;
 import org.openbot.common.CameraFragment;
+import org.openbot.common.FrameProcessor;
 import org.openbot.databinding.FragmentBlocklyExecutingBinding;
 import org.openbot.env.ImageUtils;
 import org.openbot.env.SharedPreferencesManager;
@@ -177,6 +178,11 @@ public class BlocklyExecutingFragment extends CameraFragment implements ArCoreLi
     }
   }
 
+  @Override
+  protected FrameProcessor getFrameProcessor() {
+    return this.frameProcessor;
+  }
+
   /**
    * Stops the robot and performs cleanup actions.
    * - Destroys the WebView.
@@ -219,15 +225,18 @@ public class BlocklyExecutingFragment extends CameraFragment implements ArCoreLi
     });
 
   }
-  @Override
-  protected void processFrame(Bitmap bitmap, ImageProxy imageProxy) {
-    // Check and execute modes based on blockly block code commands.
-    if (isFollow) startFollowObject(bitmap);
-    if (isAutopilot) startAutopilot(bitmap);
-    if (isFollowMultipleObject) followMultipleObject(bitmap);
-    if (isStartDetectorAutoPilot) startMultipleAi(bitmap);
-    if (isOnDetection) onDetection(bitmap);
-  }
+
+  FrameProcessor frameProcessor = new FrameProcessor() {
+    @Override
+    public void processFrame(Bitmap bitmap, ImageProxy imageProxy) {
+      // Check and execute modes based on blockly block code commands.
+      if (isFollow) startFollowObject(bitmap);
+      if (isAutopilot) startAutopilot(bitmap);
+      if (isFollowMultipleObject) followMultipleObject(bitmap);
+      if (isStartDetectorAutoPilot) startMultipleAi(bitmap);
+      if (isOnDetection) onDetection(bitmap);
+    }
+  };
 
   /**
    * Retrieves the model for object detection from the list.

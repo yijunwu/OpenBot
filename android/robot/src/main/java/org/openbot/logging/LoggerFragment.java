@@ -39,6 +39,7 @@ import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
 import org.openbot.R;
 import org.openbot.common.CameraFragment;
+import org.openbot.common.FrameProcessor;
 import org.openbot.databinding.FragmentLoggerBinding;
 import org.openbot.env.BotToControllerEventBus;
 import org.openbot.env.ImageUtils;
@@ -217,6 +218,11 @@ public class LoggerFragment extends CameraFragment {
           binding.bleToggle.setChecked(vehicle.bleConnected());
           Navigation.findNavController(requireView()).navigate(R.id.open_bluetooth_fragment);
         });
+  }
+
+  @Override
+  protected FrameProcessor getFrameProcessor() {
+    return this.frameProcessor;
   }
 
   @Override
@@ -612,45 +618,48 @@ public class LoggerFragment extends CameraFragment {
 
   private long frameNum = 0;
 
-  @Override
-  protected void processFrame(Bitmap bitmap, ImageProxy image) {
-    ++frameNum;
-    if (binding != null) {
-      if (isAdded())
-        requireActivity()
-            .runOnUiThread(
-                () ->
-                    binding.frameInfo.setText(
-                        String.format(Locale.US, "%d x %d", image.getWidth(), image.getHeight())));
+  FrameProcessor frameProcessor = new FrameProcessor() {
+    @Override
+    public void processFrame(Bitmap bitmap, ImageProxy image) {
+      ++frameNum;
+      if (binding != null) {
+        if (isAdded())
+          requireActivity()
+                  .runOnUiThread(
+                          () ->
+                                  binding.frameInfo.setText(
+                                          String.format(Locale.US, "%d x %d", image.getWidth(), image.getHeight())));
 
-      if (!binding.loggerSwitch.isChecked()) return;
+        if (!binding.loggerSwitch.isChecked()) return;
 
-      if (binding.previewCheckBox.isChecked() || binding.trainingDataCheckBox.isChecked()) {
-        sendFrameNumberToSensorService(frameNum);
-      }
+        if (binding.previewCheckBox.isChecked() || binding.trainingDataCheckBox.isChecked()) {
+          sendFrameNumberToSensorService(frameNum);
+        }
 
-      if (binding.previewCheckBox.isChecked()) {
-        if (bitmap != null)
+        if (binding.previewCheckBox.isChecked()) {
+          if (bitmap != null)
+            ImageUtils.saveBitmap(
+                    bitmap, logFolder + File.separator + "images", frameNum + "_preview.jpeg");
+        }
+        if (binding.trainingDataCheckBox.isChecked()) {
+          if (frameToCropTransform == null)
+            frameToCropTransform =
+                    ImageUtils.getTransformationMatrix(
+                            getMaxAnalyseImageSize().getWidth(),
+                            getMaxAnalyseImageSize().getHeight(),
+                            croppedBitmap.getWidth(),
+                            croppedBitmap.getHeight(),
+                            sensorOrientation,
+                            cropRect,
+                            maintainAspectRatio);
+
+          final Canvas canvas = new Canvas(croppedBitmap);
+          canvas.drawBitmap(bitmap, frameToCropTransform, null);
           ImageUtils.saveBitmap(
-              bitmap, logFolder + File.separator + "images", frameNum + "_preview.jpeg");
-      }
-      if (binding.trainingDataCheckBox.isChecked()) {
-        if (frameToCropTransform == null)
-          frameToCropTransform =
-              ImageUtils.getTransformationMatrix(
-                  getMaxAnalyseImageSize().getWidth(),
-                  getMaxAnalyseImageSize().getHeight(),
-                  croppedBitmap.getWidth(),
-                  croppedBitmap.getHeight(),
-                  sensorOrientation,
-                  cropRect,
-                  maintainAspectRatio);
-
-        final Canvas canvas = new Canvas(croppedBitmap);
-        canvas.drawBitmap(bitmap, frameToCropTransform, null);
-        ImageUtils.saveBitmap(
-            croppedBitmap, logFolder + File.separator + "images", frameNum + "_crop.jpeg");
+                  croppedBitmap, logFolder + File.separator + "images", frameNum + "_crop.jpeg");
+        }
       }
     }
-  }
+  };
+
 }

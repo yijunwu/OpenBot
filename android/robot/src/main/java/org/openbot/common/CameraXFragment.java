@@ -26,12 +26,12 @@ import androidx.camera.core.CameraControl;
 import androidx.camera.core.CameraInfo;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageAnalysis;
-import androidx.camera.core.ImageProxy;
 import androidx.camera.core.Preview;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
 import androidx.viewbinding.ViewBinding;
 
 import com.google.common.util.concurrent.ListenableFuture;
@@ -74,79 +74,104 @@ public class CameraXFragment extends Fragment {
   private CameraControl cameraControl;
   private CameraInfo cameraInfo;
 
-  VideoCapturer videoCapturer;
+  private FrameProcessor frameProcessor;
+  private final FragmentActivity fragmentActivity;
+
+    VideoCapturer videoCapturer;
 
   SharedPreferencesManager preferencesManager;
+
+  public CameraXFragment(FrameProcessor frameProcessor, FragmentActivity fragmentActivity) {
+    this.frameProcessor = frameProcessor;
+    this.fragmentActivity = fragmentActivity;
+  }
 
   @Override
   public View onCreateView(LayoutInflater inflater, ViewGroup container,
                            Bundle savedInstanceState) {
     // 1. 總承包商讀取自己的“主建築藍圖” // TODO wuyijun, clean up comments
-    return inflater.inflate(R.layout.fragment_camera_x, container, false);
+    View view = inflater.inflate(R.layout.fragment_camera_x, container, false);
+    this.addCamera(view);
+    return view;
   }
 
   protected View inflateFragment(int resId, LayoutInflater inflater, ViewGroup container) {
-    return addCamera(inflater.inflate(resId, container, false), inflater, container);
+    //return addCamera(inflater.inflate(resId, container, false), inflater, container);
+    return inflater.inflate(resId, container, false);
   }
 
   protected View inflateFragment(
       ViewBinding viewBinding, LayoutInflater inflater, ViewGroup container) {
-    return addCamera(viewBinding.getRoot(), inflater, container);
+    //return addCamera(viewBinding.getRoot(), inflater, container);
+    return inflater.inflate(R.layout.fragment_camera_x, container, false);
   }
 
-  private View addCamera(View view, LayoutInflater inflater, ViewGroup container) {
-    View cameraView = inflater.inflate(R.layout.fragment_camera, container, false);
+  private View addCamera(View cameraView) {
+    //View cameraView = inflater.inflate(R.layout.fragment_camera_x, container, false);
     ViewGroup rootView = (ViewGroup) cameraView.getRootView();
     // set lensFacing from user preferences (last used setting)
-    lensFacing =
-        preferencesManager.getCameraSwitch()
+    lensFacing = CameraSelector.LENS_FACING_FRONT;
+        /*preferencesManager.getCameraSwitch()
             ? CameraSelector.LENS_FACING_FRONT
-            : CameraSelector.LENS_FACING_BACK;
+            : CameraSelector.LENS_FACING_BACK; */ // TODO wuyijun 待恢复
     previewView = cameraView.findViewById(R.id.viewFinder);
 
-    rootView.addView(view);
-
-    if (!PermissionUtils.hasCameraPermission(requireActivity())) {
-      requestPermissionLauncherCamera.launch(Constants.PERMISSION_CAMERA);
-    } else if (PermissionUtils.shouldShowRational(requireActivity(), Constants.PERMISSION_CAMERA)) {
-      PermissionUtils.showCameraPermissionsPreviewToast(requireActivity());
-    } else {
-      setupCamera();
-    }
+    //rootView.addView(cameraView);
     return cameraView;
+  }
+
+  public FragmentActivity getActivityFromParent() {
+    FragmentActivity activity = getActivity();
+    if (activity == null) {
+//      activity = getParentFragment().getActivity();
+//      if (activity == null) {
+        return fragmentActivity;
+        //throw new IllegalStateException("Fragment " + this + " not attached to an activity, or a fragment that is attached to an activity.");
+//      }
+    }
+    return activity;
   }
 
   @Override
   public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
     super.onViewCreated(view, savedInstanceState);
     cameraExecutor = Executors.newSingleThreadExecutor();
+
+    this.setupCamera(this.frameProcessor);
   }
 
   @SuppressLint("RestrictedApi")
-  private void setupCamera() {
-    ListenableFuture<ProcessCameraProvider> cameraProviderFuture =
-            ProcessCameraProvider.getInstance(requireContext());
+  public void setupCamera(FrameProcessor frameProcessor) {
+    if (!PermissionUtils.hasCameraPermission(getActivityFromParent())) {
+      requestPermissionLauncherCamera.launch(Constants.PERMISSION_CAMERA);
+    } else if (PermissionUtils.shouldShowRational(getActivityFromParent(), Constants.PERMISSION_CAMERA)) {
+      PermissionUtils.showCameraPermissionsPreviewToast(getActivityFromParent());
+    } else {
+      ListenableFuture<ProcessCameraProvider> cameraProviderFuture =
+              ProcessCameraProvider.getInstance(requireContext());
 
-    cameraProviderFuture.addListener(
-            () -> {
-              try {
-                cameraProvider = cameraProviderFuture.get();
-                bindCameraUseCases();
-              } catch (ExecutionException | InterruptedException e) {
-                Timber.e("Camera setup failed: %s", e.toString());
-              }
-            },
-            ContextCompat.getMainExecutor(requireContext()));
+      cameraProviderFuture.addListener(
+              () -> {
+                try {
+                  cameraProvider = cameraProviderFuture.get();
+                  bindCameraUseCases(frameProcessor);
+                } catch (ExecutionException | InterruptedException e) {
+                  Timber.e("Camera setup failed: %s", e.toString());
+                }
+              },
+              ContextCompat.getMainExecutor(requireContext()));
+    }
   }
 
   @SuppressLint({"UnsafeExperimentalUsageError", "UnsafeOptInUsageError"})
-  private void bindCameraUseCases() {
+  private void bindCameraUseCases(FrameProcessor frameProcessor) {
     converter = new YuvToRgbConverter(requireContext());
     bitmapBuffer = null;
     preview = new Preview.Builder().setTargetAspectRatio(AspectRatio.RATIO_4_3).build();
-    final boolean rotated = ImageUtils.getScreenOrientation(requireActivity()) % 180 == 90;
+    final boolean rotated = ImageUtils.getScreenOrientation(getActivityFromParent()) % 180 == 90;
     final PreviewView.ScaleType scaleType =
         rotated ? PreviewView.ScaleType.FIT_CENTER : PreviewView.ScaleType.FIT_START;
+    if (previewView == null) previewView = getView().findViewById(R.id.viewFinder);
     previewView.setScaleType(scaleType);
     preview.setSurfaceProvider(previewView.getSurfaceProvider());
 
@@ -243,7 +268,7 @@ public class CameraXFragment extends Fragment {
               bitmapFrameCapturer.pushBitmap(bitmapBuffer, 270);
             }
           }
-          processFrame(bitmapBuffer, image);
+          frameProcessor.processFrame(bitmapBuffer, image);
         });
     try {
       if (cameraProvider != null) {
@@ -277,12 +302,12 @@ public class CameraXFragment extends Fragment {
           new ActivityResultContracts.RequestPermission(),
           isGranted -> {
             if (isGranted) {
-              setupCamera();
+              //setupCamera(); // TODO wuyijun do nothing
             } else if (PermissionUtils.shouldShowRational(
-                requireActivity(), Constants.PERMISSION_CAMERA)) {
-              PermissionUtils.showCameraPermissionsPreviewToast(requireActivity());
+                    getActivityFromParent(), Constants.PERMISSION_CAMERA)) {
+              PermissionUtils.showCameraPermissionsPreviewToast(getActivityFromParent());
             } else {
-
+              // TODO wuyijun do nothing
             }
           });
 
@@ -306,8 +331,8 @@ public class CameraXFragment extends Fragment {
         CameraSelector.LENS_FACING_FRONT == lensFacing
             ? CameraSelector.LENS_FACING_BACK
             : CameraSelector.LENS_FACING_FRONT;
-    preferencesManager.setCameraSwitch(!preferencesManager.getCameraSwitch());
-    bindCameraUseCases();
+    //preferencesManager.setCameraSwitch(!preferencesManager.getCameraSwitch()); // TODO wuyijun 待恢复
+    bindCameraUseCases(frameProcessor);
   }
 
   public void setAnalyserResolution(Size resolutionSize) {
@@ -317,11 +342,7 @@ public class CameraXFragment extends Fragment {
         this.analyserResolution = new Size(resolutionSize.getHeight(), resolutionSize.getWidth());
       else this.analyserResolution = resolutionSize;
     }
-    bindCameraUseCases();
-  }
-
-  protected void processFrame(Bitmap image, ImageProxy imageProxy) {
-    throw new UnsupportedOperationException("This method should NOT be called."); // TODO wuyijun, 待确认
+    bindCameraUseCases(frameProcessor);
   }
 
 }

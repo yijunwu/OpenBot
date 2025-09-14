@@ -9,6 +9,6 @@
         android:id="@+id/camera_preview_fragment_container"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:context=".CameraFragment" />
+        tools:context=".common.CameraFragment" />
 
 </FrameLayout>
